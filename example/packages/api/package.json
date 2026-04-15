@@ -1,0 +1,25 @@
+{
+  "name": "@taskflow/api",
+  "version": "1.0.0",
+  "description": "TaskFlow REST API server",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@taskflow/shared": "workspace:*",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "@types/express": "^4.17.21"
+  }
+}
