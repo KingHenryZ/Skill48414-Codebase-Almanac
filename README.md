@@ -83,6 +83,3 @@ After your HTML is generated, ask:
 ```text
 Export this visualization to PDF
 ```
-
-TESTING TRY FOR MEETING ONE 
-HI

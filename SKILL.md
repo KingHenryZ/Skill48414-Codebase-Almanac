@@ -13,6 +13,17 @@ Generate a single interactive HTML file that visualizes a codebase from product 
 2. **Single HTML Output** — One self-contained file with inline CSS/JS. Mermaid.js via CDN is the only external dependency.
 3. **Dual Perspective** — Product view (features, workflows, API surface) and Technical view (modules, dependencies, security).
 4. **Language Agnostic** — Works on JS/TS, Python, Go, Rust, Java, and mixed-language projects.
+5. **Educational Transparency** — Position output as an informational and educational layer for understanding AI-generated code and human-written code.
+6. **Cross-Functional Communication** — Optimize collaboration across Product, Engineering, and stakeholders using shared visuals and plain-language explanations.
+
+## Product Positioning
+
+The skill should consistently position itself as:
+- A transparency tool for codebases
+- A collaboration accelerator between Product and Engineering
+- A communication aid for multiple stakeholders (technical and non-technical)
+- An adaptation tool for AI-generated code ("vibe code") so teams can understand before they improve
+- A learning experience that delivers practical value: business framing, tech stack clarity, professional development, and rapid prototyping insights
 
 ## Non-Negotiable Rules
 
@@ -23,6 +34,11 @@ Generate a single interactive HTML file that visualizes a codebase from product 
 - Responsive down to 768px width
 - `prefers-reduced-motion` support on all animations
 - Print-friendly mode via `@media print`
+- MUST include glossary tooltips for technical terms and architecture jargon
+- MUST support two audience modes inside the same visualization:
+  - **Developer/Programmer Mode** (deeper technical detail)
+  - **Easy Mode** (plain-language simplification)
+- MUST include simulation views so users can explore "what happens if..." scenarios for architecture, scale, and risk
 
 ---
 
@@ -74,6 +90,12 @@ The script outputs `codebase-analysis.json` containing:
 ## Phase 2: Perspective Selection + Style Discovery
 
 **Ask ALL questions in a single batch** so the user fills everything out at once:
+
+**Question 0 — Audience Mode** (header: "Audience Mode"):
+Which mode should be available by default? Options:
+- "Both (recommended)" — Toggle between Developer/Programmer + Easy mode
+- "Developer/Programmer mode default"
+- "Easy mode default"
 
 **Question 1 — Perspectives** (header: "Perspectives"):
 Which views do you want? Options:
@@ -145,6 +167,32 @@ From the deep read, produce:
   - **Medium:** Missing input validation, overly permissive CORS, no rate limiting
   - **Low:** Missing security headers, no request size limits, verbose error messages in production
 
+### Step 3.4: Vibe Code Dashboard Enrichment
+
+Produce dashboard-ready data and narratives focused on AI-generated projects:
+- **Product + Technical paired lenses** — every key area should have a product-facing explanation and an engineering-facing explanation
+- **AI code understanding layer** — explain probable intent of generated modules in plain English
+- **Data recording emphasis** — include measurable baselines (current metrics) so teams can improve from known state
+- **Business relevance mapping** — connect technical modules to user value, revenue levers, or operational impact
+- **Collaboration cues** — identify areas where Product and Engineering need alignment
+
+### Step 3.5: Technical Feasibility Demo Enrichment
+
+Generate high-level, top-down demo narrative assets that are intentionally simple:
+- **Generic technology explainer** — "how this works" in non-jargon terms
+- **Product/Business framing** — problem, approach, value, constraints
+- **Pitch readiness** — include messaging suitable for website demo sections or ad copy drafts
+- **Media plan hooks** — include placeholders and script notes for lightweight graphic/video explainers
+
+### Step 3.6: Simulation Enrichment
+
+Create simulation scenarios for communication and planning:
+- Scale-up simulation (traffic/users increase)
+- Feature-change simulation (new feature introduced)
+- Risk simulation (dependency/security incident)
+- Team workflow simulation (handoff/product-engineering coordination)
+- Each scenario should include assumptions, expected impact, and a simple recommended next action
+
 ---
 
 ## Phase 4: HTML Generation
@@ -182,6 +230,26 @@ The HTML must contain these navigable sections:
 - Findings list with severity badge, description, file location, recommendation
 - Security checklist (what's present vs. missing)
 
+**Tab: Dashboard (Vibe Code CRM-style)**
+- Executive cards that combine product and technical KPIs
+- Module-to-value mapping table (module, purpose, business effect, owner suggestion)
+- AI-generated code explainers ("what this likely does", "why it might exist", confidence notes)
+- Baseline metrics panel to emphasize "record data first, then improve"
+- Stakeholder summary widgets for Product, Engineering, and leadership
+
+**Tab: Feasibility Demo**
+- Super simplified technical narrative ("top-down how it works")
+- Product/business narrative blocks for pitches
+- Graphic storyboard strip (scene cards with copy prompts)
+- Video demo outline (30-90 second script prompts + visual cues)
+- Website/ad-ready microcopy suggestions
+
+**Tab: Simulations**
+- Scenario cards with input assumptions
+- Impact preview panels (product, engineering effort, risk)
+- Recommended response playbooks
+- "Before vs after" snapshots where data exists
+
 **Sidebar:**
 - Collapsible file tree (mirrors the codebase structure)
 - Click a file to highlight it in diagrams and scroll to its symbols
@@ -190,7 +258,9 @@ The HTML must contain these navigable sections:
 - Tab bar at top
 - Search/filter bar that searches across all tabs
 - Breadcrumb showing current context
-- Keyboard shortcuts: 1-4 for tabs, / for search, Esc to clear
+- Keyboard shortcuts: 1-7 for tabs, / for search, Esc to clear
+- Mode toggle visible in header: Developer/Programmer Mode <-> Easy Mode
+- Tooltip trigger icon for terms with glossary explanations
 
 ### Key Requirements
 
@@ -202,6 +272,11 @@ The HTML must contain these navigable sections:
 - All Mermaid diagram code embedded as `<pre class="mermaid">` blocks
 - Add `<!-- === SECTION NAME === -->` comment blocks for every major section
 - Detailed comments explaining non-obvious logic
+- Include reusable tooltip component (accessible via keyboard and screen readers)
+- In Easy Mode, replace jargon with plain-language alternatives while keeping core meaning
+- In Developer/Programmer Mode, show additional implementation depth (symbols, dependencies, constraints)
+- Include an educational "How to read this visualization" panel
+- Frame insights as informational/educational guidance, not automatic code rewrite instructions
 
 ---
 
@@ -211,8 +286,9 @@ The HTML must contain these navigable sections:
 2. **Open** — Use `open [filename].html` to launch in browser
 3. **Summarize** — Tell the user:
    - File location, file size, visualization scope
-   - Navigation: Tab bar, sidebar file tree, search (/ key), keyboard shortcuts 1-4
+   - Navigation: Tab bar, sidebar file tree, search (/ key), keyboard shortcuts, and audience mode toggle
    - How to customize: `:root` CSS variables for colors, font link for typography
+   - How to use tooltips, dashboard, feasibility demo, and simulations for stakeholder communication
    - How to regenerate: re-run the skill with different options
 
 ---
