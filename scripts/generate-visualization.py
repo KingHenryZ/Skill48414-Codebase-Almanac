@@ -701,6 +701,169 @@ code {
 ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #FFD700, #2E7D32); }
 
 /* ═════════════════════════════════════════════════════════════════════
+   ASYMMETRIC HERO — left-aligned text, oversized pineapple bleeding
+   off the right edge of the panel.
+   ═════════════════════════════════════════════════════════════════════ */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  margin: -8px -32px 28px;               /* extend into tab-panel padding */
+  padding: clamp(40px, 6vw, 80px) clamp(32px, 6vw, 84px) clamp(52px, 7vw, 96px);
+  min-height: 460px;
+  border-radius: 22px 22px 28px 28px;
+  overflow: hidden;                       /* clips the pineapple bleed */
+  background:
+    radial-gradient(ellipse 50% 70% at 8% 40%, rgba(255, 215, 0, 0.38) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 75% at 90% 80%, rgba(244, 163, 0, 0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 50% at 100% 0%, rgba(255, 249, 230, 0.7) 0%, transparent 60%),
+    linear-gradient(135deg, #FFF4C2 0%, #FFE27A 55%, #FFC947 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65),
+              0 18px 48px rgba(139, 90, 43, 0.25);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+}
+.hero::before {
+  /* warm grain wash */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-soft);
+  background-size: 260px 260px;
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero::after {
+  /* directional sun shaft */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.10) 28%,
+    transparent 48%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  padding-right: 20px;
+  text-align: left;
+}
+.hero-eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--leaf-deep);
+  background: rgba(255, 249, 230, 0.85);
+  border: 1.5px dashed var(--rind);
+  padding: 5px 14px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 10px rgba(244, 163, 0, 0.2);
+}
+.hero-content h1 {
+  font-size: clamp(2.8rem, 5.4vw, 4.6rem) !important;
+  line-height: 0.98;
+  margin-bottom: 0.35em;
+}
+.hero-content h1::after {
+  margin-top: 18px;
+  margin-left: 0;
+  width: min(420px, 70%);
+}
+.hero-lede {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(1.05rem, 1.5vw, 1.28rem);
+  color: var(--rind-deep);
+  max-width: 54ch;
+  margin-top: 0.5em;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.hero-meta .chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 249, 230, 0.92);
+  border: 1.5px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  box-shadow: 0 2px 8px rgba(244, 163, 0, 0.18);
+}
+.hero-meta .chip strong {
+  color: var(--leaf-deep);
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* The pineapple itself — absolutely positioned, bleeds past the right edge */
+.hero-art {
+  position: absolute;
+  top: -42px;
+  right: clamp(-220px, -14vw, -120px);
+  width: clamp(520px, 68%, 860px);
+  height: auto;
+  z-index: 1;
+  pointer-events: none;
+  transform: rotate(6deg);
+  filter: drop-shadow(0 30px 46px rgba(139, 90, 43, 0.35));
+  animation: heroFloat 9s ease-in-out infinite;
+}
+.hero-pineapple { width: 100%; height: auto; display: block; }
+@keyframes heroFloat {
+  0%, 100% { transform: rotate(6deg) translateY(0); }
+  50%      { transform: rotate(5deg) translateY(-14px); }
+}
+
+/* Decorative overlapping floating leaves poking over content */
+.hero-leaf {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 6px 10px rgba(46, 125, 50, 0.35));
+}
+.hero-leaf.one   { top: 20px;   left: 44%; width: 90px;  transform: rotate(-18deg); opacity: 0.9; }
+.hero-leaf.two   { bottom: 60px; left: 36%; width: 70px; transform: rotate(28deg); opacity: 0.85; }
+
+/* Responsive: stack pineapple below on narrow screens */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 36px 28px 200px;
+  }
+  .hero-art {
+    top: auto;
+    bottom: -120px;
+    right: -160px;
+    width: 420px;
+    transform: rotate(10deg);
+  }
+  .hero-leaf { display: none; }
+}
+@media (max-width: 600px) {
+  .hero-art { width: 340px; right: -120px; bottom: -90px; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
    BUTTONS: rounded pill, golden fill, drop shadow, lift + brighten hover
    ═════════════════════════════════════════════════════════════════════ */
 
@@ -897,6 +1060,107 @@ hr {
 /* Easy mode */
 body.easy-mode .dev-only { display: none !important; }
 body:not(.easy-mode) .easy-only { display: none !important; }
+"""
+
+
+# ── Hero illustration: hand-drawn-feeling pineapple in SVG ─────────────
+HERO_PINEAPPLE_SVG = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="body-grad" x1="0.15" y1="0" x2="0.9" y2="1">
+      <stop offset="0%"  stop-color="#FFF3B0"/>
+      <stop offset="35%" stop-color="#FFD700"/>
+      <stop offset="75%" stop-color="#F4A300"/>
+      <stop offset="100%" stop-color="#9E6A0A"/>
+    </linearGradient>
+    <radialGradient id="body-sheen" cx="0.28" cy="0.28" r="0.55">
+      <stop offset="0%"  stop-color="#FFF8DC" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#FFF8DC" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFF8DC" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leaf-front" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#A5D6A7"/>
+      <stop offset="50%" stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+    <linearGradient id="leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#81C784"/>
+      <stop offset="100%" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="leaf-back" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#0F3B14"/>
+    </linearGradient>
+    <pattern id="diamond" x="0" y="0" width="74" height="74" patternUnits="userSpaceOnUse" patternTransform="rotate(2)">
+      <path d="M 37 0 L 74 37 L 37 74 L 0 37 Z"
+            fill="none" stroke="#8B5A2B" stroke-width="2.4" stroke-linejoin="round" opacity="0.75"/>
+      <circle cx="37" cy="37" r="3" fill="#F4A300"/>
+      <circle cx="0"  cy="37" r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="74" cy="37" r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="37" cy="0"  r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="37" cy="74" r="2.2" fill="#C9820A" opacity="0.8"/>
+    </pattern>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="14" result="off"/>
+      <feColorMatrix in="off" type="matrix"
+        values="0 0 0 0 0.54  0 0 0 0 0.35  0 0 0 0 0.10  0 0 0 0.55 0"/>
+      <feBlend in="SourceGraphic" in2="off" mode="normal"/>
+    </filter>
+  </defs>
+
+  <!-- ambient sun aura -->
+  <circle cx="320" cy="520" r="340" fill="#FFD700" opacity="0.18"/>
+  <circle cx="320" cy="520" r="260" fill="#FFE27A" opacity="0.28"/>
+
+  <!-- back leaves (far layer) -->
+  <g filter="url(#soft-shadow)">
+    <path d="M 210 340 Q 150 180 90 80  Q 140 220 170 330 Z"  fill="url(#leaf-back)"/>
+    <path d="M 430 340 Q 490 180 550 80 Q 500 220 470 330 Z"  fill="url(#leaf-back)"/>
+    <path d="M 260 345 Q 220 140 200 20 Q 250 180 265 335 Z"  fill="url(#leaf-back)"/>
+    <path d="M 380 345 Q 420 140 440 20 Q 390 180 375 335 Z"  fill="url(#leaf-back)"/>
+  </g>
+
+  <!-- mid leaves -->
+  <g>
+    <path d="M 240 355 Q 210 170 190 40  Q 245 200 258 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 400 355 Q 430 170 450 40  Q 395 200 382 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 285 355 Q 270 130 260 0   Q 295 170 298 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 355 355 Q 370 130 380 0   Q 345 170 342 345 Z" fill="url(#leaf-mid)"/>
+  </g>
+
+  <!-- front leaves (tall, center) -->
+  <g>
+    <path d="M 315 360 Q 308 140 318 15 Q 325 160 325 355 Z" fill="url(#leaf-front)"/>
+    <path d="M 325 360 Q 335 140 322 15 Q 317 160 315 355 Z" fill="url(#leaf-front)" opacity="0.85"/>
+    <!-- central leaf highlights -->
+    <path d="M 320 140 Q 322 80 325 30" stroke="#E8F5E9" stroke-width="2" fill="none" opacity="0.6"/>
+    <path d="M 300 200 Q 292 120 280 50" stroke="#C8E6C9" stroke-width="1.5" fill="none" opacity="0.5"/>
+    <path d="M 340 200 Q 348 120 360 50" stroke="#C8E6C9" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </g>
+
+  <!-- Body -->
+  <g filter="url(#soft-shadow)">
+    <ellipse cx="320" cy="580" rx="240" ry="300" fill="url(#body-grad)"
+             stroke="#8B5A2B" stroke-width="5"/>
+  </g>
+  <!-- Diamond lattice overlay clipped to body -->
+  <ellipse cx="320" cy="580" rx="236" ry="296" fill="url(#diamond)" opacity="0.85"/>
+  <!-- Sheen -->
+  <ellipse cx="250" cy="470" rx="110" ry="150" fill="url(#body-sheen)"/>
+  <!-- Bottom shadow crescent -->
+  <path d="M 130 720 Q 320 920 510 720 Q 430 870 320 880 Q 210 870 130 720 Z"
+        fill="#8B5A2B" opacity="0.18"/>
+
+  <!-- Floating little leaf accents (decorative particles) -->
+  <g opacity="0.8">
+    <path d="M 70 440 q 10 -18 30 -8 q -18 10 -30 8 Z"  fill="#4CAF50"/>
+    <path d="M 560 400 q -10 -18 -30 -8 q 18 10 30 8 Z" fill="#4CAF50"/>
+    <path d="M 40 680 q 14 -10 26 6 q -18 0 -26 -6 Z"    fill="#66BB6A"/>
+    <path d="M 585 700 q -14 -10 -26 6 q 18 0 26 -6 Z"   fill="#66BB6A"/>
+  </g>
+</svg>
 """
 
 
@@ -1189,13 +1453,36 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
     <!-- === OVERVIEW === -->
     <section class="tab-panel active" id="panel-overview" role="tabpanel">
       <div class="breadcrumb"><span>{esc(project)}</span><span class="breadcrumb-sep">/</span><span>Overview</span></div>
-      <h1>{esc(project)} Architecture Map
-        <button class="tooltip-trigger" type="button"
-          data-tooltip="Use tabs to change view, press / to search, 1-7 to jump between tabs."
-          aria-label="How to use this visualization">?</button>
-      </h1>
-      <p data-searchable class="easy-only">A plain-language tour of what this project does, how it is put together, and where to look next.</p>
-      <p data-searchable class="dev-only">Structural extraction plus semantic enrichment of modules, dependencies, and security posture.</p>
+
+      <!-- Asymmetric hero: text left, oversized pineapple bleeding right -->
+      <div class="hero">
+        <div class="hero-content">
+          <span class="hero-eyebrow">Tropical Code Cartography</span>
+          <h1>{esc(project)} Architecture Map
+            <button class="tooltip-trigger" type="button"
+              data-tooltip="Use tabs to change view, press / to search, 1-7 to jump between tabs."
+              aria-label="How to use this visualization">?</button>
+          </h1>
+          <p data-searchable class="hero-lede easy-only">A plain-language tour of what this project does, how it is put together, and where to look next.</p>
+          <p data-searchable class="hero-lede dev-only">Structural extraction plus semantic enrichment of modules, dependencies, and security posture.</p>
+          <div class="hero-meta">
+            <span class="chip"><strong>{files_count}</strong> files</span>
+            <span class="chip"><strong>{lines_count}</strong> LOC</span>
+            <span class="chip"><strong>{len(deps)}</strong> deps</span>
+            <span class="chip"><strong>{symbols_count}</strong> symbols</span>
+          </div>
+        </div>
+        <div class="hero-art">{HERO_PINEAPPLE_SVG}</div>
+        <!-- Small overlapping leaf flourishes -->
+        <svg class="hero-leaf one" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M 60 175 Q 40 100 20 10 Q 70 90 62 170 Z" fill="#4CAF50"/>
+          <path d="M 62 170 Q 70 80 65 10 Q 80 100 70 170 Z" fill="#2E7D32" opacity="0.9"/>
+        </svg>
+        <svg class="hero-leaf two" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M 60 175 Q 80 90 100 20 Q 55 100 62 170 Z" fill="#66BB6A"/>
+          <path d="M 62 170 Q 55 90 55 20 Q 40 100 52 170 Z" fill="#2E7D32" opacity="0.85"/>
+        </svg>
+      </div>
 
       <div class="metrics-row">
         <div class="metric-card" data-searchable><div class="card-title">Files</div><div class="card-value">{files_count}</div><div class="card-label">scanned files</div></div>
