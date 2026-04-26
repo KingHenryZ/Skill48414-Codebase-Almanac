@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { AuthService } from "../controllers/authService";
-import { authenticate } from "../middleware/authenticate";
+import { AuthService } from "../controllers/authService.js";
+import { authenticate } from "../middleware/authenticate.js";
 
 export const authRoutes = Router();
 

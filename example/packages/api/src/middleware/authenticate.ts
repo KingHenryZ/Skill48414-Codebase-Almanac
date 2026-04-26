@@ -3,6 +3,12 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
+export interface AuthRequest extends Request {
+  userId?: string;
+  userRole?: string;
+}
+
+/* eslint-disable @typescript-eslint/no-namespace -- Express Request augmentation */
 declare global {
   namespace Express {
     interface Request {

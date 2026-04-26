@@ -1,18 +1,17 @@
 {
-  "name": "taskflow-monorepo",
+  "name": "spendwise-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "A monorepo task management platform with API, CLI, and shared libraries",
+  "description": "SpendWise — personal budget and expense tracker (API + web UI)",
   "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "npm run dev --workspace=@taskflow/api",
+    "dev": "npm run dev --workspace=@spendwise/api",
     "build": "npm run build --workspaces",
-    "lint": "eslint packages/*/src/**/*.ts",
-    "test": "vitest run --workspace"
+    "lint": "eslint packages/*/src/**/*.ts"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "vitest": "^1.6.0",
-    "eslint": "^9.0.0"
+    "eslint": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
   }
 }

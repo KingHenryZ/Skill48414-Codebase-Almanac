@@ -15,8 +15,8 @@ export function rateLimiter(req: Request, res: Response, next: NextFunction) {
   }
 
   record.count++;
-  res.setHeader("X-RateLimit-Limit", maxRequests);
-  res.setHeader("X-RateLimit-Remaining", Math.max(0, maxRequests - record.count));
+  res.setHeader("X-RateLimit-Limit", String(maxRequests));
+  res.setHeader("X-RateLimit-Remaining", String(Math.max(0, maxRequests - record.count)));
 
   if (record.count > maxRequests) {
     return res.status(429).json({ error: "Too many requests", code: "RATE_LIMITED" });
