@@ -35,3 +35,6 @@ coverage/
 .code-visualizer/
 .code-visualizer-realworld/
 *-visualization.html
+
+# Local demo fixture (not shipped to users)
+example/

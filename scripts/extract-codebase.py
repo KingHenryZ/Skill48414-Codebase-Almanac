@@ -8,6 +8,7 @@ Produces a codebase-analysis.json with:
   - Symbol catalog (functions, classes, interfaces)
   - Package metadata and framework detection
   - Language breakdown and metrics
+  - has_database heuristic (deps, .sql files, Prisma schema paths)
 
 Usage:
     python extract-codebase.py <target_dir> [output_dir]
@@ -506,6 +507,32 @@ def build_symbol_catalog(root_dir, flat_files):
     return catalog
 
 
+DATABASE_PACKAGE_HINTS = frozenset({
+    "better-sqlite3", "sqlite3", "sql.js",
+    "pg", "postgres", "@vercel/postgres",
+    "mysql", "mysql2", "mariadb",
+    "mongoose", "mongodb", "ioredis", "redis",
+    "prisma", "@prisma/client",
+    "drizzle-orm", "typeorm", "sequelize", "knex",
+    "kysely", "@libsql/client", "tedious", "oracledb",
+})
+
+
+def detect_has_database(metadata, flat_files):
+    """True if package deps or repo files suggest a persisted database layer."""
+    deps = set(metadata.get("dependencies", []))
+    if deps & DATABASE_PACKAGE_HINTS:
+        return True
+    for f in flat_files:
+        path = f.get("path", "").replace("\\", "/")
+        pl = path.lower()
+        if pl.endswith(".sql"):
+            return True
+        if "prisma/schema.prisma" in pl or pl.endswith("/schema.prisma"):
+            return True
+    return False
+
+
 def compute_metrics(flat_files, dependency_graph, symbol_catalog):
     """Compute summary metrics for the codebase."""
     lang_counts = defaultdict(lambda: {"files": 0, "lines": 0})
@@ -590,8 +617,11 @@ def extract_codebase(target_dir):
     print("  Finding entry points...")
     entry_points = find_entry_points(target_dir, flat_files, metadata)
 
+    has_database = detect_has_database(metadata, flat_files)
+
     return {
         "project_root": target_dir,
+        "has_database": has_database,
         "project_name": metadata.get("name") or os.path.basename(target_dir),
         "description": metadata.get("description", ""),
         "file_tree": file_tree,
