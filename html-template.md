@@ -74,13 +74,13 @@ Every generated visualization must follow this structure:
             Security
           </button>
         </div>
-        <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Search... ( / )"
-                 aria-label="Search visualization" oninput="handleSearch(this.value)">
-        </div>
+        <!-- NOTE: No search input. By design — tabs and the file tree are the only navigation surfaces. -->
       </div>
 
-      <!-- === BREADCRUMB === -->
+      <!-- === BREADCRUMB (Overview tab only) === -->
+      <!-- The Overview tab keeps a static breadcrumb so the project name stays anchored. -->
+      <!-- Every OTHER tab replaces the breadcrumb with an in-panel `.panel-header` -->
+      <!-- containing the Developer View / General View toggle (see PRODUCT tab below). -->
       <div class="breadcrumb" id="breadcrumb">
         <span>[Project Name]</span>
         <span class="breadcrumb-sep">/</span>
@@ -94,16 +94,28 @@ Every generated visualization must follow this structure:
 
       <!-- === TAB: PRODUCT === -->
       <div class="tab-panel" id="panel-product" role="tabpanel">
+        <!-- Per-tab mode toggle replaces the breadcrumb on non-Overview tabs.
+             Required on EVERY non-Overview tab. Both buttons must use
+             data-mode="dev" / data-mode="easy" so setMode() can sync all
+             toggle instances at once. -->
+        <div class="panel-header">
+          <div class="mode-toggle" role="group" aria-label="Audience view">
+            <button data-mode="dev" class="active" onclick="setMode('dev')">Developer View</button>
+            <button data-mode="easy" onclick="setMode('easy')">General View</button>
+          </div>
+        </div>
         <!-- Feature cards, workflow diagrams, API surface -->
       </div>
 
       <!-- === TAB: TECHNICAL === -->
       <div class="tab-panel" id="panel-technical" role="tabpanel">
+        <!-- Same .panel-header / .mode-toggle block as Product tab. -->
         <!-- Dependency graph, file tree explorer, symbol catalog -->
       </div>
 
       <!-- === TAB: SECURITY === -->
       <div class="tab-panel" id="panel-security" role="tabpanel">
+        <!-- Same .panel-header / .mode-toggle block as Product tab. -->
         <!-- Risk summary, findings, recommendations -->
       </div>
 
@@ -113,11 +125,19 @@ Every generated visualization must follow this structure:
   <script>
     /* === MERMAID INIT === */
     /* === TAB SWITCHING === */
-    /* === SEARCH === */
     /* === FILE TREE INTERACTION === */
     /* === SIDEBAR TOGGLE === */
     /* === KEYBOARD SHORTCUTS === */
+    /* (No search code. Search has been removed from the contract.) */
   </script>
+
+  <!-- Persistent bottom-left credits — required, do not remove -->
+  <aside class="credits" aria-label="Credits">
+    <div class="credits-line credits-team">designed by the <strong>PineApple Team</strong></div>
+    <div class="credits-line"><span class="credits-handle">@HenryZou</span></div>
+    <div class="credits-line"><span class="credits-handle">@JennyZhang</span></div>
+    <div class="credits-line credits-year">2026</div>
+  </aside>
 
 </body>
 </html>
@@ -172,34 +192,12 @@ function switchTab(tabId) {
 - After switching tabs, re-render Mermaid in the visible panel (hidden panels have zero dimensions)
 - Update the breadcrumb to reflect current tab
 
-### 3. Search
+### 3. (Search removed)
 
-```javascript
-function handleSearch(query) {
-  const q = query.toLowerCase().trim();
-  if (!q) {
-    clearSearch();
-    return;
-  }
-
-  document.querySelectorAll("[data-searchable]").forEach(el => {
-    const text = el.textContent.toLowerCase();
-    const match = text.includes(q);
-    el.style.display = match ? "" : "none";
-
-    if (match) {
-      highlightText(el, q);
-    }
-  });
-}
-```
-
-**Rules:**
-- Every searchable element (cards, table rows, findings, symbols) must have `data-searchable` attribute
-- Search works across ALL tabs, not just the visible one
-- Highlight matching text with `.search-highlight` class
-- Clear highlights and show all elements when search is empty
-- Wire to keyboard shortcut: `/` focuses the search input, `Esc` clears it
+The visualization MUST NOT include a search input or any search JS. The
+`data-searchable` attribute may stay on elements that previously powered
+search — it is now a harmless data-attribute (used only by the
+`scrollToSymbol` flash animation in the file tree).
 
 ### 4. File Tree Interaction
 
@@ -237,22 +235,14 @@ function toggleSidebar() {
 
 ```javascript
 document.addEventListener("keydown", (e) => {
-  if (e.target.tagName === "INPUT") return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
   switch (e.key) {
     case "1": switchTab("overview"); break;
     case "2": switchTab("product"); break;
     case "3": switchTab("technical"); break;
     case "4": switchTab("security"); break;
-    case "/":
-      e.preventDefault();
-      document.getElementById("searchInput").focus();
-      break;
-    case "Escape":
-      document.getElementById("searchInput").value = "";
-      clearSearch();
-      document.getElementById("searchInput").blur();
-      break;
+    // No `/` or `Escape` mapping — search has been removed by the SKILL.
   }
 });
 ```
