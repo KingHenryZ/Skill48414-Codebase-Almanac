@@ -15,9 +15,9 @@ When this rule is invoked, follow the phased workflow in `SKILL.md`:
 1. **Read `SKILL.md`** — it contains the complete phase-by-phase instructions
 2. **Phase 0:** Detect mode (new analysis, demo, or enhancement)
 3. **Phase 1:** Run `python scripts/extract-codebase.py <target_dir> <output_dir>`
-4. **Phase 2:** Ask user about perspectives, detail level, and style using the `AskQuestion` tool
+4. **Phase 2:** Skip — fixed defaults (no questions). See SKILL.md Phase 2.
 5. **Phase 3:** Read key files from the codebase to enrich with product/security insights
-6. **Phase 4:** Generate the HTML visualization (read supporting files first)
+6. **Phase 4:** Generate the HTML visualization with `python scripts/generate-visualization.py`
 7. **Phase 5:** Open in browser and summarize
 8. **Phase 6:** Optionally export to PDF
 
@@ -27,7 +27,6 @@ The `SKILL.md` references Claude Code tool names. In Cursor, use these equivalen
 
 | SKILL.md Reference | Cursor Equivalent |
 | --- | --- |
-| `AskUserQuestion` | `AskQuestion` tool |
 | `Read` tool | `Read` tool (same) |
 | `Write` tool | `Write` tool (same) |
 | `Shell` / `execute_command` | `Shell` tool |
@@ -37,10 +36,8 @@ The `SKILL.md` references Claude Code tool names. In Cursor, use these equivalen
 
 Read these on-demand as specified in `SKILL.md`:
 
-- `STYLE_PRESETS.md` — Visual themes (read during Phase 2)
-- `visualization-base.css` — Mandatory CSS to include in output (read during Phase 4)
-- `html-template.md` — HTML skeleton and JS contracts (read during Phase 4)
-- `animation-patterns.md` — Interaction patterns (read during Phase 4)
+- `visualization-base.css` — Mandatory CSS embedded by the generator (read during Phase 4 if debugging output)
+- `STYLE_PRESETS.md`, `html-template.md`, `animation-patterns.md` — Internal references for fork/theme authors; not part of the default workflow.
 
 ## Example Invocation
 

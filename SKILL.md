@@ -27,6 +27,7 @@ The skill should consistently position itself as:
 
 ## Non-Negotiable Rules
 
+- **MUST NOT ask the user any setup questions.** Phase 2 has fixed defaults (Audience Mode = Both, Perspectives = Both, Detail Level = Comprehensive, Theme = Pineapple Tropical). Proceed directly from extraction to generation. Only honor an override if the user explicitly volunteers one in their prompt (e.g. "skip the technical tab"); never solicit one.
 - Output MUST be a single `.html` file (plus Mermaid CDN)
 - Every visualization MUST include the full contents of `visualization-base.css`
 - All diagrams use Mermaid.js syntax rendered client-side and **MUST parse without "Syntax error in text"** (see the Mermaid rules in Phase 3 / Phase 4)
@@ -143,58 +144,18 @@ The script outputs `codebase-analysis.json` containing:
 
 ---
 
-## Phase 2: Perspective Selection + Style Discovery
+## Phase 2: Configuration (no questions, fixed defaults)
 
-**Ask ALL questions in a single batch** so the user fills everything out at once:
+**Do NOT ask the user any setup questions.** The skill ships with one fixed configuration. Proceed directly to Phase 3.
 
-**Question 0 — Audience Mode** (header: "Audience Mode"):
-Which mode should be available by default? Options:
-- "Both (recommended)" — Toggle between **Developer View** (technical) and **General View** (plain-language)
-- "Developer/Programmer mode default"
-- "General View default" (start in plain-language mode)
+| Setting | Value | Notes |
+| --- | --- | --- |
+| Audience Mode | **Both** | Developer View loads first; the in-page toggle still lets the reader switch to General View. |
+| Perspectives | **Both** | Product and Technical tabs are both generated. |
+| Detail Level | **Comprehensive** | Full module graph, all symbols, per-file analysis where appropriate. |
+| Visual Theme | **Pineapple Tropical** | The only theme `generate-visualization.py` supports. |
 
-**Question 1 — Perspectives** (header: "Perspectives"):
-Which views do you want? Options:
-- "Both (recommended)" — Product + Technical perspectives
-- "Product only" — Features, workflows, API surface
-- "Technical only" — Modules, dependencies, security
-
-**Question 2 — Detail Level** (header: "Detail"):
-How detailed should the visualization be? Options:
-- "Overview" — High-level architecture, key metrics, main diagrams
-- "Detailed" — Full module graph, all symbols, security audit
-- "Comprehensive" — Everything, including per-file analysis
-
-**Question 3 — Style** (header: "Style"):
-Which visual theme do you want? Options:
-- "Pineapple Tropical (default)" — The built-in theme used by `generate-visualization.py`. Golden yellow, amber, and tropical green with hand-drawn pineapple hero, diamond-lattice textures, and editorial serif typography. No extra configuration needed.
-- "Choose from presets" — Pick from the 6 themes in [STYLE_PRESETS.md](STYLE_PRESETS.md) (Blueprint Dark, Obsidian Graph, Neon Terminal, Paper White, Arctic Light, Warm Slate). Requires manual HTML generation in Phase 4 instead of the script.
-- "Show me previews" — Generate 3 single-page HTML previews to compare before choosing.
-
-### Step 2.1: Pineapple Tropical (default path)
-
-No additional style configuration needed. Proceed directly to Phase 3. The generation script in Phase 4 handles everything.
-
-### Step 2.2: Style Previews (if "Show me previews")
-
-Read [STYLE_PRESETS.md](STYLE_PRESETS.md) for available themes.
-
-Generate 3 single-page HTML previews under `.code-visualizer/previews/` (style-a.html, style-b.html, style-c.html). Each preview should show:
-- The project name and a summary card
-- A sample Mermaid diagram
-- A sample file tree section
-- The color palette and typography in action
-
-Open each preview for the user automatically.
-
-Ask (header: "Theme"):
-Which style do you prefer? Options: Style A: [Name] / Style B: [Name] / Style C: [Name] / Mix elements
-
-### Step 2.3: Direct Selection (if "Choose from presets")
-
-Show the available presets from [STYLE_PRESETS.md](STYLE_PRESETS.md) and let the user pick.
-
-**Note:** Choosing a preset theme (Steps 2.2 or 2.3) requires manual HTML generation in Phase 4 — the generation script only supports the Pineapple Tropical theme.
+The only time these defaults bend is when the user **volunteers** an override in their prompt — e.g. "visualize this codebase but skip the security tab" or "use general view as the default." Never solicit such overrides.
 
 ---
 
@@ -544,9 +505,9 @@ Diagrams are rendered by **Mermaid.js from jsDelivr** (currently v10+ / v11). In
 
 ## Phase 4: HTML Generation
 
-### Default Path: Run the Generation Script
+### Run the Generation Script
 
-If the user chose the Pineapple Tropical theme (default) or did not express a theme preference, run the generation script:
+Run:
 
 ```bash
 python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name] --enrichment <enrichment.json>
@@ -594,16 +555,6 @@ The Database tab is **conditionally shown**: if the extraction JSON contains no 
 - Accessible tooltips on key terms (keyboard and screen reader friendly)
 - Pineapple-skin diamond-lattice dividers between sections
 - `prefers-reduced-motion` support, print-friendly mode, responsive down to 768px (and degrades gracefully to 420px)
-
-### Alternate Path: Manual HTML Generation (non-Pineapple theme)
-
-If the user chose a theme from [STYLE_PRESETS.md](STYLE_PRESETS.md) in Phase 2, generate the HTML manually. **Before generating, read these supporting files:**
-
-- [html-template.md](html-template.md) — HTML skeleton and JS contracts
-- [visualization-base.css](visualization-base.css) — Mandatory CSS (include in full)
-- [animation-patterns.md](animation-patterns.md) — Interaction patterns
-
-The manually generated HTML must follow the same output structure (all 8 tabs, sidebar, navigation, mode toggle) and key requirements listed in [html-template.md](html-template.md). Apply the chosen preset's CSS variables, fonts, Mermaid theme config, and signature elements from [STYLE_PRESETS.md](STYLE_PRESETS.md).
 
 ---
 
@@ -664,8 +615,8 @@ Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screens
 | --- | --- | --- |
 | [scripts/extract-codebase.py](scripts/extract-codebase.py) | Python script for codebase structure extraction | Phase 1 (extraction) |
 | [scripts/generate-visualization.py](scripts/generate-visualization.py) | Generates the full HTML visualization from extraction JSON (Pineapple theme) | Phase 4 (default generation) |
-| [STYLE_PRESETS.md](STYLE_PRESETS.md) | Visual themes with CSS variables, fonts, and diagram config | Phase 2 (if choosing non-default theme) |
-| [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — included by the script, or manually in alternate path | Phase 4 (generation) |
-| [html-template.md](html-template.md) | HTML skeleton, JS contracts, accessibility requirements | Phase 4 (manual generation only) |
-| [animation-patterns.md](animation-patterns.md) | Subtle interaction patterns for tree, tabs, cards | Phase 4 (manual generation only) |
+| [STYLE_PRESETS.md](STYLE_PRESETS.md) | Internal reference: alternative theme palettes for forks of the generator | (not part of the default workflow) |
+| [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — embedded by the script | Phase 4 (generation) |
+| [html-template.md](html-template.md) | Internal reference: HTML skeleton, JS contracts, accessibility requirements | (not part of the default workflow) |
+| [animation-patterns.md](animation-patterns.md) | Internal reference: subtle interaction patterns for tree, tabs, cards | (not part of the default workflow) |
 | [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (export) |
