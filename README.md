@@ -1,73 +1,153 @@
 # Skill48414: Codebase Almanac
 
-A skill that turns any codebase into a single interactive HTML **almanac** — chapters of maps, statistics, plain-language explanations, security findings, and recommendations in one navigable artifact for both technical and non-technical readers.
+> This skill streamlines the "vibe-coding" experience by providing a clear visual map of your codebase. Designed for both engineers and product managers, it offers actionable insights and intelligent suggestions for product features, architectural improvements, and security risks.
 
-If you are non-technical, you can ignore all internal files and just use the prompts below.
+You point it at a folder of code. It produces **one self-contained HTML file** that opens in any browser. That file is the "almanac" — chapters of maps, statistics, plain-language explanations, findings, and suggestions, all in one place, readable by engineers and non-engineers alike.
 
-## Quickest Way To Use It
+---
 
-### In Cursor
+## Get It From GitHub (3 minutes, first-time setup)
 
-Copy and paste one of these:
+You only do this once.
 
-```text
-Run the code visualizer on example/
+### Step 1 — Make sure you have Python 3
+
+Open a terminal and type:
+
+```bash
+python3 --version
 ```
 
-```text
-Generate a code visualization for this project
+If you see something like `Python 3.10.4` you're done. If you see `command not found`, install Python from <https://www.python.org/downloads/> and try again.
+
+**No other tools to install.** No `pip install`, no `npm install`. The skill uses only the Python standard library.
+
+### Step 2 — Download the skill
+
+Pick **one** of these two ways.
+
+**Option A — `git clone` (recommended if you have git):**
+
+```bash
+git clone https://github.com/KingHenryZ/Project48414.git
+cd Project48414
 ```
 
-```text
-Visualize the codebase at /path/to/my/project
+**Option B — Download the ZIP:**
+
+1. Open <https://github.com/KingHenryZ/Project48414> in your browser
+2. Click the green **Code** button → **Download ZIP**
+3. Unzip it somewhere you'll remember (e.g. your Desktop or `~/Documents/`)
+4. Open the unzipped `Project48414` folder
+
+That folder is the skill.
+
+### Step 3 — Open the skill folder in your editor
+
+**For Cursor users:** open Cursor → **File → Open Folder…** → pick the `Project48414` folder. The skill is auto-registered via `.cursor/rules/visualizer.mdc` — nothing else to do.
+
+**For Claude Code users:** copy the folder into your skills directory:
+
+```bash
+cp -r Project48414 ~/.claude/skills/codebase-almanac
 ```
 
-### In Claude Code
+The skill is now available as `/codebase-almanac` inside Claude Code.
 
-If installed as a skill, call:
+---
+
+## Use It (the actual work)
+
+### First: try the built-in example
+
+There's a small toy codebase already inside `example/`. Run the skill on it first so you can see what the output looks like before bringing your own code.
+
+**In Cursor**, open the chat sidebar and paste:
+
+```text
+Run the codebase almanac on example/
+```
+
+**In Claude Code**, type:
 
 ```text
 /codebase-almanac
-```
-
-Then say:
-
-```text
 Run it on example/
 ```
 
-or
+Then sit back. The assistant will:
+
+1. Scan the example folder
+2. Read the important files
+3. Write content for every tab
+4. Generate the HTML
+5. Open it in your default browser
+
+You should see a page with a giant pineapple illustration on the right and chapters laid out below it. **That's the almanac.**
+
+### Then: use it on your own code
+
+Same idea, just point it at any folder on your machine.
+
+**In Cursor:**
 
 ```text
-Run it on /path/to/my/project
+Run the codebase almanac on /Users/yourname/path/to/your-project
 ```
 
-## What You Will Get
-
-The assistant will generate **one HTML file** and open it in your browser.
-
-That file has 4 tabs:
-- Overview
-- Product
-- Technical
-- Security
-
-## If You Want The Built-in Demo
-
-Say exactly:
+**In Claude Code:**
 
 ```text
-Run the code visualizer on example/
+/codebase-almanac
+Run it on /Users/yourname/path/to/your-project
 ```
 
-## If You Want Your Own Codebase
+The output is written to `.codebase-almanac/visualization-YYYYMMDD-HHMMSS.html` inside your target project. Every run produces a fresh, timestamped file — old ones are kept for comparison.
 
-Say exactly:
+### Sharing the result
 
-```text
-Visualize /path/to/my/project
-```
+The output is a single `.html` file with no external dependencies (Mermaid diagrams render via CDN, everything else is inline). Share it any way you share files:
 
-## Sharing The HTML
+- Email it
+- Drop it in Slack / Discord / Teams
+- Attach to a doc / Notion page
+- Commit to a GitHub Pages branch
+- Drop on S3, Netlify, Vercel, Cloudflare Pages — any static host
 
-The output is a single self-contained `.html` file. Share it the way you share any file: email it, drop it in Slack, attach it to a doc, or commit it to your own static host (GitHub Pages, S3, Netlify, etc.).
+To save it as a PDF, just open it in any browser and use **File → Print → Save as PDF**. The HTML has print styles built in.
+
+---
+
+## What's In Each Tab
+
+The output has up to **8 tabs**. Every tab (except Overview) has a **Developer View** for engineers and a **General View** for non-technical readers — toggle inside the tab.
+
+| Tab | What you'll find |
+|---|---|
+| **Overview** | The hero pineapple, headline metrics (files / lines / packages / symbols), a language breakdown, and a card grid that links to every other tab. Start here. |
+| **Product** | What the app does in plain language, the feature map, user workflows, the API surface, and the product architecture. The page for product managers and stakeholders. |
+| **Technical** | Architecture diagram, dependency graph, full symbol catalog, code-quality cards, and a 4-tier code health check (Health / Sick / Severe Sick / Death). The page for engineers. |
+| **Database** *(only shown if a database is detected)* | Entity-relationship diagram, index analysis, query patterns, and how the backend talks to the data layer. |
+| **Security** | Three-card risk summary (high / medium / low), detailed findings with file locations and recommendations, an authentication audit, an input-validation audit, dependency risk notes, and a scalability section. |
+| **Suggestions** | Actionable improvements grouped into Product / Technical / Security, each with a "Pineapple Seasoning Score" effort chip (🍍 Quick Win → 🍍🍍🍍 Big Bake), plus a scalability roadmap and a priority matrix. |
+| **Pitch** | A one-line headline, a "tell your story" narrative, who it's for, why it matters, what makes it special, architecture strengths, and tech-stack justification. The page for talking *about* the codebase to humans. |
+| **Simulation** | "What if it takes off?" scenarios — 10× / 100× / 1000× growth, what comes next, growing pains, team scaling, and a step-by-step big-picture roadmap. |
+
+Navigation: tabs along the top, file tree in the left sidebar, keyboard shortcuts `1`–`8` to jump between tabs.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE). Use it, fork it, ship it, sell it. No warranty.
+
+---
+
+## The Pineapple Team
+
+Made by:
+
+- **Henry Zou** — [@HenryZou on LinkedIn](https://www.linkedin.com/in/cunhanzou/)
+- **Jenny Zheng** — [@JennyZheng on LinkedIn](https://www.linkedin.com/in/jenzheny/)
+
+> In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 & 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.
