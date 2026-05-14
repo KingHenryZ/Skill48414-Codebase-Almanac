@@ -3,8 +3,8 @@
 generate-visualization.py
 
 Generate a single self-contained HTML code visualization from an analysis JSON
-produced by `scripts/extract-codebase.py`. Follows the contracts in SKILL.md,
-html-template.md, and visualization-base.css.
+produced by `scripts/extract-codebase.py`. Follows the contracts in SKILL.md
+and visualization-base.css.
 
 Usage:
   python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name]
@@ -2906,8 +2906,8 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
     # Auto-discover enrichment.json sitting next to the analysis JSON when
     # the caller didn't pass --enrichment explicitly. This is the canonical
-    # SKILL.md layout (`.code-visualizer/codebase-analysis.json` +
-    # `.code-visualizer/enrichment.json`) — without auto-discovery the
+    # SKILL.md layout (`.codebase-almanac/codebase-analysis.json` +
+    # `.codebase-almanac/enrichment.json`) — without auto-discovery the
     # generator silently falls back to `[AI_FILL]` placeholders even when
     # a perfectly valid enrichment file exists, which is the worst kind of
     # silent failure for a visualization tool.
@@ -3705,7 +3705,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="generator" content="code-visualizer (SKILL.md)" />
+<meta name="generator" content="codebase-almanac (SKILL.md)" />
 <title>{esc(title_text)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -3747,17 +3747,16 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
       <div class="hero">
         <!-- Left of the pineapple: EVERGREEN content that stays the same
-             on every visualization this skill produces. Batch 4 stripped
-             the dashed-box framing so the title + tagline sit directly
-             on the hero background, and removed the second block entirely. -->
+             on every visualization this skill produces. Title + tagline
+             sit directly on the hero background (un-boxed). -->
         <div class="hero-content">
-          <div class="hero-evergreen" data-tbd="1">
+          <div class="hero-evergreen">
             <h1 class="hero-evergreen-title">Pineapple Code Cartography
               <button class="tooltip-trigger" type="button"
                 data-tooltip="Use the tab bar to change view, or press 1-{len(tab_ids)} to jump between tabs."
                 aria-label="How to use this visualization">?</button>
             </h1>
-            <p class="hero-evergreen-body">[TBD &mdash; evergreen tagline / mission statement that stays the same across every codebase rendered with this skill.]</p>
+            <p class="hero-evergreen-body">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
           </div>
         </div>
         <div class="hero-art">{HERO_PINEAPPLE_SVG}</div>

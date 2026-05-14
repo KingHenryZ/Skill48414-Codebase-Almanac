@@ -1,9 +1,9 @@
 ---
-name: code-visualizer
-description: Generate interactive HTML visualizations of any codebase. Use when the user wants to understand a project's architecture, visualize dependencies, audit security, or create a navigable code map. Works with any language — JS/TS, Python, Go, Rust, Java, and more.
+name: codebase-almanac
+description: Skill48414 — Codebase Almanac. Generate a single interactive HTML almanac of any codebase that explains, analyzes, and recommends in one navigable artifact. Use when the user wants to understand a project's architecture, visualize dependencies, audit security, or produce a stakeholder-ready code map. Works with any language — JS/TS, Python, Go, Rust, Java, and more.
 ---
 
-# Code Visualizer
+# Skill48414: Codebase Almanac
 
 Generate a single interactive HTML file that visualizes a codebase from product and technical perspectives.
 
@@ -27,6 +27,7 @@ The skill should consistently position itself as:
 
 ## Non-Negotiable Rules
 
+- **MUST NOT ask the user any setup questions.** Phase 2 has fixed defaults (Audience Mode = Both, Perspectives = Both, Detail Level = Comprehensive, Theme = Pineapple Tropical). Proceed directly from extraction to generation. Only honor an override if the user explicitly volunteers one in their prompt (e.g. "skip the technical tab"); never solicit one.
 - Output MUST be a single `.html` file (plus Mermaid CDN)
 - Every visualization MUST include the full contents of `visualization-base.css`
 - All diagrams use Mermaid.js syntax rendered client-side and **MUST parse without "Syntax error in text"** (see the Mermaid rules in Phase 3 / Phase 4)
@@ -105,15 +106,22 @@ Determine what the user wants:
 - **Mode A: New Analysis** — User points to a codebase directory. Go to Phase 1.
 - **Mode B: Demo** — User wants to try it out. Use the built-in `example/` directory. Go to Phase 1.
 
-### Fresh Generation Rule
+### Fresh Generation Rule (mandatory, every invocation)
 
-**Always generate a brand-new HTML file.** Never reuse, patch, or modify a previously generated visualization. Even if a `.code-visualizer/` directory already contains HTML files from prior runs, ignore them and generate fresh. Each output file MUST have a unique timestamped filename:
+**Every run of this skill executes Phase 1 → 4.5 from scratch.** No caching, no resume, no partial reuse. Specifically:
+
+1. **Re-run extraction.** Always invoke `scripts/extract-codebase.py` against the target directory and write a fresh `codebase-analysis.json`. **Never** read a pre-existing `codebase-analysis.json` — its contents may be stale (the codebase may have changed) or partial (a prior run may have crashed mid-write).
+2. **Re-run enrichment.** Always perform Phase 3 in full and write a fresh `enrichment.json`. **Never** read a pre-existing `enrichment.json` to "save time" or to "fill in the gaps." Stale or partial enrichment is the most common cause of mismatched / generic-looking output.
+3. **Re-run generation.** Always invoke `scripts/generate-visualization.py` to write a fresh, uniquely-named output file. **Never** patch, edit, or append to a previously generated HTML.
+4. **Verify completeness.** Phase 4.5 MUST run before Phase 5. The `[AI_FILL` count in the output HTML MUST be zero. If it is not, re-author the missing enrichment keys and re-generate — do not deliver a half-filled HTML to the user.
+
+Output filenames MUST be timestamped so prior runs are preserved for comparison and never silently overwritten:
 
 ```
-.code-visualizer/visualization-YYYYMMDD-HHMMSS.html
+.codebase-almanac/visualization-YYYYMMDD-HHMMSS.html
 ```
 
-This guarantees every run produces an independent artifact and prior visualizations are preserved for comparison.
+The same applies to the intermediate JSON: write each run's analysis + enrichment to `.codebase-almanac/codebase-analysis.json` and `.codebase-almanac/enrichment.json` respectively, **overwriting** the previous-run versions in place (the timestamped HTML keeps the historical artifact). At no point should the agent skip a phase because a file from a prior run already exists on disk.
 
 ---
 
@@ -143,58 +151,18 @@ The script outputs `codebase-analysis.json` containing:
 
 ---
 
-## Phase 2: Perspective Selection + Style Discovery
+## Phase 2: Configuration (no questions, fixed defaults)
 
-**Ask ALL questions in a single batch** so the user fills everything out at once:
+**Do NOT ask the user any setup questions.** The skill ships with one fixed configuration. Proceed directly to Phase 3.
 
-**Question 0 — Audience Mode** (header: "Audience Mode"):
-Which mode should be available by default? Options:
-- "Both (recommended)" — Toggle between **Developer View** (technical) and **General View** (plain-language)
-- "Developer/Programmer mode default"
-- "General View default" (start in plain-language mode)
+| Setting | Value | Notes |
+| --- | --- | --- |
+| Audience Mode | **Both** | Developer View loads first; the in-page toggle still lets the reader switch to General View. |
+| Perspectives | **Both** | Product and Technical tabs are both generated. |
+| Detail Level | **Comprehensive** | Full module graph, all symbols, per-file analysis where appropriate. |
+| Visual Theme | **Pineapple Tropical** | The only theme `generate-visualization.py` supports. |
 
-**Question 1 — Perspectives** (header: "Perspectives"):
-Which views do you want? Options:
-- "Both (recommended)" — Product + Technical perspectives
-- "Product only" — Features, workflows, API surface
-- "Technical only" — Modules, dependencies, security
-
-**Question 2 — Detail Level** (header: "Detail"):
-How detailed should the visualization be? Options:
-- "Overview" — High-level architecture, key metrics, main diagrams
-- "Detailed" — Full module graph, all symbols, security audit
-- "Comprehensive" — Everything, including per-file analysis
-
-**Question 3 — Style** (header: "Style"):
-Which visual theme do you want? Options:
-- "Pineapple Tropical (default)" — The built-in theme used by `generate-visualization.py`. Golden yellow, amber, and tropical green with hand-drawn pineapple hero, diamond-lattice textures, and editorial serif typography. No extra configuration needed.
-- "Choose from presets" — Pick from the 6 themes in [STYLE_PRESETS.md](STYLE_PRESETS.md) (Blueprint Dark, Obsidian Graph, Neon Terminal, Paper White, Arctic Light, Warm Slate). Requires manual HTML generation in Phase 4 instead of the script.
-- "Show me previews" — Generate 3 single-page HTML previews to compare before choosing.
-
-### Step 2.1: Pineapple Tropical (default path)
-
-No additional style configuration needed. Proceed directly to Phase 3. The generation script in Phase 4 handles everything.
-
-### Step 2.2: Style Previews (if "Show me previews")
-
-Read [STYLE_PRESETS.md](STYLE_PRESETS.md) for available themes.
-
-Generate 3 single-page HTML previews under `.code-visualizer/previews/` (style-a.html, style-b.html, style-c.html). Each preview should show:
-- The project name and a summary card
-- A sample Mermaid diagram
-- A sample file tree section
-- The color palette and typography in action
-
-Open each preview for the user automatically.
-
-Ask (header: "Theme"):
-Which style do you prefer? Options: Style A: [Name] / Style B: [Name] / Style C: [Name] / Mix elements
-
-### Step 2.3: Direct Selection (if "Choose from presets")
-
-Show the available presets from [STYLE_PRESETS.md](STYLE_PRESETS.md) and let the user pick.
-
-**Note:** Choosing a preset theme (Steps 2.2 or 2.3) requires manual HTML generation in Phase 4 — the generation script only supports the Pineapple Tropical theme.
+The only time these defaults bend is when the user **volunteers** an override in their prompt — e.g. "visualize this codebase but skip the security tab" or "use general view as the default." Never solicit such overrides.
 
 ---
 
@@ -221,7 +189,7 @@ Produce content for the Overview tab (same for both modes):
 
 **Overview hero structure (batch 3 lockdown):**
 - The Overview tab **does NOT** render: the project breadcrumb (`Project / Overview`), the "TROPICAL CODE CARTOGRAPHY" eyebrow, the four metric chips next to the pineapple (files / LOC / deps / symbols), or the two stray crown-leaf SVGs. Authors and downstream themes MUST NOT re-introduce them — they duplicate the metric cards immediately below and clutter the hero.
-- **Left of the pineapple** is reserved for **two evergreen `TBD` blocks** that render the SAME on every codebase. They are NOT templated against the analysis JSON. Authors fill them once at the skill level (tagline + methodology / mission), not per project.
+- **Left of the pineapple** is the **single evergreen block** (`.hero-evergreen`) — title (`Pineapple Code Cartography`) plus a one-paragraph tagline. It renders the SAME on every codebase. It is NOT templated against the analysis JSON. The tagline currently shipped is the AGI / Fibonacci-spirals manifesto in `scripts/generate-visualization.py`. Forks may rewrite it but MUST keep it as one paragraph and MUST NOT re-introduce a second evergreen block.
 - Codebase-specific name + AI-generated `project_summary` live exclusively in the `.codebase-card` section below the hero (gradient-bordered, gold-rind glow, gradient-text title).
 - The "Codebase at a Glance" duplicate paragraph above the summary cards has been replaced with a short navigation lede ("Explore by Tab") since the codebase-card now owns the summary role.
 - The language bar, metrics row, codebase-card, summary-grid, and the persistent bottom-left credits block are the only chrome on the Overview tab. **No** search bar, **no** Frameworks section, **no** Navigation section.
@@ -358,7 +326,7 @@ The Simulation tab also drops the Developer / General split for a single **"Boss
 
 ### Step 3.10: Write Enrichment JSON
 
-After completing all enrichment steps (3.2–3.9), write the content to `.code-visualizer/enrichment.json`. The generation script reads this file and injects the content into the HTML automatically — no manual HTML editing needed.
+After completing all enrichment steps (3.2–3.9), write the content to `.codebase-almanac/enrichment.json`. The generation script reads this file and injects the content into the HTML automatically — no manual HTML editing needed.
 
 The JSON structure must match the keys the script expects:
 
@@ -544,20 +512,20 @@ Diagrams are rendered by **Mermaid.js from jsDelivr** (currently v10+ / v11). In
 
 ## Phase 4: HTML Generation
 
-### Default Path: Run the Generation Script
+### Run the Generation Script
 
-If the user chose the Pineapple Tropical theme (default) or did not express a theme preference, run the generation script:
+Run:
 
 ```bash
 python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name] --enrichment <enrichment.json>
 ```
 
 Arguments:
-- `<analysis.json>` — Path to the `codebase-analysis.json` from Phase 1 (e.g., `.code-visualizer/codebase-analysis.json`)
-- `<output.html>` — Path for the output HTML file. **MUST use a timestamped name** (e.g., `.code-visualizer/visualization-20260426-134500.html`). Never reuse or overwrite a previous output file.
+- `<analysis.json>` — Path to the `codebase-analysis.json` from Phase 1 (e.g., `.codebase-almanac/codebase-analysis.json`)
+- `<output.html>` — Path for the output HTML file. **MUST use a timestamped name** (e.g., `.codebase-almanac/visualization-20260426-134500.html`). Never reuse or overwrite a previous output file.
 - `[title]` — (Optional) Custom page title. Defaults to `"{project_name} — Code Visualization"`
 - `[project_name]` — (Optional) Override the project name detected in the JSON
-- `--enrichment <enrichment.json>` — **(Optional)** Path to the `enrichment.json` written in Phase 3 Step 3.10. **Auto-discovered** when the analysis JSON sits next to it (canonical layout: `.code-visualizer/codebase-analysis.json` + `.code-visualizer/enrichment.json`). The script merges this into the analysis data and fills all content sections automatically. Without enrichment (and no auto-discovered sibling), the visualization renders `[AI_FILL]` placeholders in every section — that's the silent-failure mode the auto-discover guards against, so always either keep the canonical layout or pass `--enrichment` explicitly.
+- `--enrichment <enrichment.json>` — **(Optional)** Path to the `enrichment.json` written in Phase 3 Step 3.10. **Auto-discovered** when the analysis JSON sits next to it (canonical layout: `.codebase-almanac/codebase-analysis.json` + `.codebase-almanac/enrichment.json`). The script merges this into the analysis data and fills all content sections automatically. Without enrichment (and no auto-discovered sibling), the visualization renders `[AI_FILL]` placeholders in every section — that's the silent-failure mode the auto-discover guards against, so always either keep the canonical layout or pass `--enrichment` explicitly.
 
 The script produces a single self-contained HTML file with the Pineapple Tropical Maximalist theme. It reads `visualization-base.css` from the project root automatically and embeds all CSS, JS, Mermaid diagrams, and an SVG pineapple hero illustration inline. Before embedding, it **normalizes Mermaid source** (subgraph spacing, common `erDiagram` type mistakes, colon-in-label edge cases, and dependency-node labels) so diagrams parse under **Mermaid.js 10+**, and it maps security finding text in order **`remediation` → `recommendation` → `detail`** into the **Recommendation:** row.
 
@@ -587,23 +555,13 @@ The Database tab is **conditionally shown**: if the extraction JSON contains no 
 - **Mermaid diagrams render at natural size** (`useMaxWidth: false`) so font sizes are consistent across the document
 - **4-tier Code Health Check** (Health / Sick / Severe Sick / Death) with a legend strip above the items
 - **Codebase intro card** below the pineapple — gradient-bordered, gold-rind glow, gradient-text title — owns the codebase name + AI summary (replaces the old left-of-pineapple eyebrow + headline)
-- **Two evergreen TBD blocks left of the pineapple** that are SAME on every codebase (skill-level intro, not codebase-specific)
+- **Single evergreen block left of the pineapple** (title + AGI / Fibonacci tagline) — same on every codebase, not templated from the analysis JSON
 - **Per-tab mode toggle** (Developer View / General View) replaces the breadcrumb on every non-Overview tab; the Overview tab has no breadcrumb either
-- **Persistent bottom-left credits block** (PineApple Team / @HenryZou + LinkedIn / @JennyZhang + LinkedIn TBD / 2026), darker semi-transparent background, responsive on small screens
+- **Persistent bottom-left credits block** (PineApple Team / @HenryZou + LinkedIn / @JennyZheng + LinkedIn / 2026), darker semi-transparent background, responsive on small screens
 - **3D pineapple hero illustration** with grounded crown leaves (no stray fragments outside the body)
 - Accessible tooltips on key terms (keyboard and screen reader friendly)
 - Pineapple-skin diamond-lattice dividers between sections
 - `prefers-reduced-motion` support, print-friendly mode, responsive down to 768px (and degrades gracefully to 420px)
-
-### Alternate Path: Manual HTML Generation (non-Pineapple theme)
-
-If the user chose a theme from [STYLE_PRESETS.md](STYLE_PRESETS.md) in Phase 2, generate the HTML manually. **Before generating, read these supporting files:**
-
-- [html-template.md](html-template.md) — HTML skeleton and JS contracts
-- [visualization-base.css](visualization-base.css) — Mandatory CSS (include in full)
-- [animation-patterns.md](animation-patterns.md) — Interaction patterns
-
-The manually generated HTML must follow the same output structure (all 8 tabs, sidebar, navigation, mode toggle) and key requirements listed in [html-template.md](html-template.md). Apply the chosen preset's CSS variables, fonts, Mermaid theme config, and signature elements from [STYLE_PRESETS.md](STYLE_PRESETS.md).
 
 ---
 
@@ -632,7 +590,7 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 
 ## Phase 5: Delivery
 
-1. **Clean up** — Delete `.code-visualizer/previews/` if it exists
+1. **Clean up** — Delete `.codebase-almanac/previews/` if it exists
 2. **Open in browser (mandatory)** — Always run `open <output.html>` (macOS) or `xdg-open <output.html>` (Linux) immediately after generation. Do not skip this step or ask whether the user wants it opened — just open it.
 3. **Summarize** — Tell the user:
    - File location, file size, visualization scope
@@ -644,37 +602,10 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 
 ---
 
-## Phase 6: Share & Export (Optional)
-
-After delivery, ask: _"Would you like to share this visualization? I can deploy it to a live URL or export it as a PDF."_
-
-Options:
-- **Deploy to URL** — Shareable link via Vercel
-- **Export to PDF** — Static snapshot for documentation
-- **Both**
-- **No thanks**
-
-### 6A: Deploy to Vercel
-
-Run `bash scripts/deploy.sh <path-to-html>`. See the script for full Vercel setup and login guidance.
-
-### 6B: Export to PDF
-
-Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screenshots each tab view and combines into a PDF.
-
-**Note for PDF export:** The visualization uses tabs, so the export script captures each tab's content as a separate page. Mermaid diagrams render as SVG and are captured correctly. Interactive features (tree expand, mode toggle) are not preserved. The persistent bottom-left credits block prints inline at the end of the document via `@media print`.
-
----
-
 ## Supporting Files
 
 | File | Purpose | When to Read |
 | --- | --- | --- |
 | [scripts/extract-codebase.py](scripts/extract-codebase.py) | Python script for codebase structure extraction | Phase 1 (extraction) |
 | [scripts/generate-visualization.py](scripts/generate-visualization.py) | Generates the full HTML visualization from extraction JSON (Pineapple theme) | Phase 4 (default generation) |
-| [STYLE_PRESETS.md](STYLE_PRESETS.md) | Visual themes with CSS variables, fonts, and diagram config | Phase 2 (if choosing non-default theme) |
-| [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — included by the script, or manually in alternate path | Phase 4 (generation) |
-| [html-template.md](html-template.md) | HTML skeleton, JS contracts, accessibility requirements | Phase 4 (manual generation only) |
-| [animation-patterns.md](animation-patterns.md) | Subtle interaction patterns for tree, tabs, cards | Phase 4 (manual generation only) |
-| [scripts/deploy.sh](scripts/deploy.sh) | Deploy visualization to Vercel | Phase 6 (sharing) |
-| [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (sharing) |
+| [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — embedded by the script | Phase 4 (generation) |

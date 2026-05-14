@@ -4,9 +4,9 @@ globs:
 alwaysApply: false
 ---
 
-# Code Visualizer — Cursor Integration
+# Skill48414: Codebase Almanac — Cursor Integration
 
-This rule activates the code-visualizer skill for Cursor. The full workflow is defined in `SKILL.md` at the project root.
+This rule activates the `codebase-almanac` skill for Cursor. The full workflow is defined in `SKILL.md` at the project root.
 
 ## Quick Reference
 
@@ -15,11 +15,10 @@ When this rule is invoked, follow the phased workflow in `SKILL.md`:
 1. **Read `SKILL.md`** — it contains the complete phase-by-phase instructions
 2. **Phase 0:** Detect mode (new analysis, demo, or enhancement)
 3. **Phase 1:** Run `python scripts/extract-codebase.py <target_dir> <output_dir>`
-4. **Phase 2:** Ask user about perspectives, detail level, and style using the `AskQuestion` tool
+4. **Phase 2:** Skip — fixed defaults (no questions). See SKILL.md Phase 2.
 5. **Phase 3:** Read key files from the codebase to enrich with product/security insights
-6. **Phase 4:** Generate the HTML visualization (read supporting files first)
+6. **Phase 4:** Generate the HTML visualization with `python scripts/generate-visualization.py`
 7. **Phase 5:** Open in browser and summarize
-8. **Phase 6:** Optionally deploy or export to PDF
 
 ## Tool Mapping
 
@@ -27,7 +26,6 @@ The `SKILL.md` references Claude Code tool names. In Cursor, use these equivalen
 
 | SKILL.md Reference | Cursor Equivalent |
 | --- | --- |
-| `AskUserQuestion` | `AskQuestion` tool |
 | `Read` tool | `Read` tool (same) |
 | `Write` tool | `Write` tool (same) |
 | `Shell` / `execute_command` | `Shell` tool |
@@ -37,10 +35,7 @@ The `SKILL.md` references Claude Code tool names. In Cursor, use these equivalen
 
 Read these on-demand as specified in `SKILL.md`:
 
-- `STYLE_PRESETS.md` — Visual themes (read during Phase 2)
-- `visualization-base.css` — Mandatory CSS to include in output (read during Phase 4)
-- `html-template.md` — HTML skeleton and JS contracts (read during Phase 4)
-- `animation-patterns.md` — Interaction patterns (read during Phase 4)
+- `visualization-base.css` — Mandatory CSS embedded by the generator (read during Phase 4 if debugging output)
 
 ## Example Invocation
 
@@ -49,10 +44,10 @@ The user might say:
 - "Generate a code visualization"
 - "Show me the architecture of this project"
 - "Create an HTML map of this repo"
-- "Run the code visualizer on ./my-project"
+- "Run the codebase almanac on ./my-project"
 
 When any of these are detected, read `SKILL.md` and follow Phase 0.
 
-## Built-in Demo
+## Built-in Example
 
-If the user wants to try the visualizer without a target codebase, use the `example/` directory at the project root. It contains a TypeScript monorepo (API + shared package + CLI) that exercises all visualization features.
+If the user wants to try the almanac without a target codebase, use the `example/` directory at the project root. It is a small static TypeScript fixture (Express API + shared validation package) that exercises every tab. See `example/README.md` for details.
