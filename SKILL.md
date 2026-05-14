@@ -602,20 +602,6 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 
 ---
 
-## Phase 6: Export (Optional)
-
-After delivery, ask: _"Would you like to export this visualization as a PDF?"_
-
-The output HTML is already self-contained — share it as a file (email, Slack, attach to a doc, commit to your own static host). No deploy step is shipped with this skill.
-
-### Export to PDF
-
-Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screenshots each tab view and combines into a PDF.
-
-**Note for PDF export:** The visualization uses tabs, so the export script captures each tab's content as a separate page. Mermaid diagrams render as SVG and are captured correctly. Interactive features (tree expand, mode toggle) are not preserved. The persistent bottom-left credits block prints inline at the end of the document via `@media print`.
-
----
-
 ## Supporting Files
 
 | File | Purpose | When to Read |
@@ -623,4 +609,3 @@ Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screens
 | [scripts/extract-codebase.py](scripts/extract-codebase.py) | Python script for codebase structure extraction | Phase 1 (extraction) |
 | [scripts/generate-visualization.py](scripts/generate-visualization.py) | Generates the full HTML visualization from extraction JSON (Pineapple theme) | Phase 4 (default generation) |
 | [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — embedded by the script | Phase 4 (generation) |
-| [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (export) |

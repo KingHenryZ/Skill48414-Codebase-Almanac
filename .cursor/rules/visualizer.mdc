@@ -19,7 +19,6 @@ When this rule is invoked, follow the phased workflow in `SKILL.md`:
 5. **Phase 3:** Read key files from the codebase to enrich with product/security insights
 6. **Phase 4:** Generate the HTML visualization with `python scripts/generate-visualization.py`
 7. **Phase 5:** Open in browser and summarize
-8. **Phase 6:** Optionally export to PDF
 
 ## Tool Mapping
 
