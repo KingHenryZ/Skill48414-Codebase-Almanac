@@ -31,10 +31,16 @@ coverage/
 .turbo/
 .cache/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Generated visualizer outputs (local artifacts)
 .code-visualizer/
 .code-visualizer-realworld/
 *-visualization.html
 
-# Local demo fixture (not shipped to users)
-example/
+# example/ demo runtime artifacts (the demo SOURCE is committed; local runtime state is not)
+example/package-lock.json
+example/packages/api/data/
