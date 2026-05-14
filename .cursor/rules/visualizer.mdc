@@ -37,7 +37,6 @@ The `SKILL.md` references Claude Code tool names. In Cursor, use these equivalen
 Read these on-demand as specified in `SKILL.md`:
 
 - `visualization-base.css` — Mandatory CSS embedded by the generator (read during Phase 4 if debugging output)
-- `STYLE_PRESETS.md`, `html-template.md`, `animation-patterns.md` — Internal references for fork/theme authors; not part of the default workflow.
 
 ## Example Invocation
 

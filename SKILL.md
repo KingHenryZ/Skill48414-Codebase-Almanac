@@ -106,15 +106,22 @@ Determine what the user wants:
 - **Mode A: New Analysis** — User points to a codebase directory. Go to Phase 1.
 - **Mode B: Demo** — User wants to try it out. Use the built-in `example/` directory. Go to Phase 1.
 
-### Fresh Generation Rule
+### Fresh Generation Rule (mandatory, every invocation)
 
-**Always generate a brand-new HTML file.** Never reuse, patch, or modify a previously generated visualization. Even if a `.code-visualizer/` directory already contains HTML files from prior runs, ignore them and generate fresh. Each output file MUST have a unique timestamped filename:
+**Every run of this skill executes Phase 1 → 4.5 from scratch.** No caching, no resume, no partial reuse. Specifically:
+
+1. **Re-run extraction.** Always invoke `scripts/extract-codebase.py` against the target directory and write a fresh `codebase-analysis.json`. **Never** read a pre-existing `codebase-analysis.json` — its contents may be stale (the codebase may have changed) or partial (a prior run may have crashed mid-write).
+2. **Re-run enrichment.** Always perform Phase 3 in full and write a fresh `enrichment.json`. **Never** read a pre-existing `enrichment.json` to "save time" or to "fill in the gaps." Stale or partial enrichment is the most common cause of mismatched / generic-looking output.
+3. **Re-run generation.** Always invoke `scripts/generate-visualization.py` to write a fresh, uniquely-named output file. **Never** patch, edit, or append to a previously generated HTML.
+4. **Verify completeness.** Phase 4.5 MUST run before Phase 5. The `[AI_FILL` count in the output HTML MUST be zero. If it is not, re-author the missing enrichment keys and re-generate — do not deliver a half-filled HTML to the user.
+
+Output filenames MUST be timestamped so prior runs are preserved for comparison and never silently overwritten:
 
 ```
 .code-visualizer/visualization-YYYYMMDD-HHMMSS.html
 ```
 
-This guarantees every run produces an independent artifact and prior visualizations are preserved for comparison.
+The same applies to the intermediate JSON: write each run's analysis + enrichment to `.code-visualizer/codebase-analysis.json` and `.code-visualizer/enrichment.json` respectively, **overwriting** the previous-run versions in place (the timestamped HTML keeps the historical artifact). At no point should the agent skip a phase because a file from a prior run already exists on disk.
 
 ---
 
@@ -615,8 +622,5 @@ Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screens
 | --- | --- | --- |
 | [scripts/extract-codebase.py](scripts/extract-codebase.py) | Python script for codebase structure extraction | Phase 1 (extraction) |
 | [scripts/generate-visualization.py](scripts/generate-visualization.py) | Generates the full HTML visualization from extraction JSON (Pineapple theme) | Phase 4 (default generation) |
-| [STYLE_PRESETS.md](STYLE_PRESETS.md) | Internal reference: alternative theme palettes for forks of the generator | (not part of the default workflow) |
 | [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — embedded by the script | Phase 4 (generation) |
-| [html-template.md](html-template.md) | Internal reference: HTML skeleton, JS contracts, accessibility requirements | (not part of the default workflow) |
-| [animation-patterns.md](animation-patterns.md) | Internal reference: subtle interaction patterns for tree, tabs, cards | (not part of the default workflow) |
 | [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (export) |

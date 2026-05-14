@@ -3,8 +3,8 @@
 generate-visualization.py
 
 Generate a single self-contained HTML code visualization from an analysis JSON
-produced by `scripts/extract-codebase.py`. Follows the contracts in SKILL.md,
-html-template.md, and visualization-base.css.
+produced by `scripts/extract-codebase.py`. Follows the contracts in SKILL.md
+and visualization-base.css.
 
 Usage:
   python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name]
