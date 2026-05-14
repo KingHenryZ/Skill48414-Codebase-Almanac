@@ -1,9 +1,9 @@
 ---
-name: code-visualizer
-description: Generate interactive HTML visualizations of any codebase. Use when the user wants to understand a project's architecture, visualize dependencies, audit security, or create a navigable code map. Works with any language — JS/TS, Python, Go, Rust, Java, and more.
+name: codebase-almanac
+description: Skill48414 — Codebase Almanac. Generate a single interactive HTML almanac of any codebase that explains, analyzes, and recommends in one navigable artifact. Use when the user wants to understand a project's architecture, visualize dependencies, audit security, or produce a stakeholder-ready code map. Works with any language — JS/TS, Python, Go, Rust, Java, and more.
 ---
 
-# Code Visualizer
+# Skill48414: Codebase Almanac
 
 Generate a single interactive HTML file that visualizes a codebase from product and technical perspectives.
 
@@ -118,10 +118,10 @@ Determine what the user wants:
 Output filenames MUST be timestamped so prior runs are preserved for comparison and never silently overwritten:
 
 ```
-.code-visualizer/visualization-YYYYMMDD-HHMMSS.html
+.codebase-almanac/visualization-YYYYMMDD-HHMMSS.html
 ```
 
-The same applies to the intermediate JSON: write each run's analysis + enrichment to `.code-visualizer/codebase-analysis.json` and `.code-visualizer/enrichment.json` respectively, **overwriting** the previous-run versions in place (the timestamped HTML keeps the historical artifact). At no point should the agent skip a phase because a file from a prior run already exists on disk.
+The same applies to the intermediate JSON: write each run's analysis + enrichment to `.codebase-almanac/codebase-analysis.json` and `.codebase-almanac/enrichment.json` respectively, **overwriting** the previous-run versions in place (the timestamped HTML keeps the historical artifact). At no point should the agent skip a phase because a file from a prior run already exists on disk.
 
 ---
 
@@ -326,7 +326,7 @@ The Simulation tab also drops the Developer / General split for a single **"Boss
 
 ### Step 3.10: Write Enrichment JSON
 
-After completing all enrichment steps (3.2–3.9), write the content to `.code-visualizer/enrichment.json`. The generation script reads this file and injects the content into the HTML automatically — no manual HTML editing needed.
+After completing all enrichment steps (3.2–3.9), write the content to `.codebase-almanac/enrichment.json`. The generation script reads this file and injects the content into the HTML automatically — no manual HTML editing needed.
 
 The JSON structure must match the keys the script expects:
 
@@ -521,11 +521,11 @@ python scripts/generate-visualization.py <analysis.json> <output.html> [title] [
 ```
 
 Arguments:
-- `<analysis.json>` — Path to the `codebase-analysis.json` from Phase 1 (e.g., `.code-visualizer/codebase-analysis.json`)
-- `<output.html>` — Path for the output HTML file. **MUST use a timestamped name** (e.g., `.code-visualizer/visualization-20260426-134500.html`). Never reuse or overwrite a previous output file.
+- `<analysis.json>` — Path to the `codebase-analysis.json` from Phase 1 (e.g., `.codebase-almanac/codebase-analysis.json`)
+- `<output.html>` — Path for the output HTML file. **MUST use a timestamped name** (e.g., `.codebase-almanac/visualization-20260426-134500.html`). Never reuse or overwrite a previous output file.
 - `[title]` — (Optional) Custom page title. Defaults to `"{project_name} — Code Visualization"`
 - `[project_name]` — (Optional) Override the project name detected in the JSON
-- `--enrichment <enrichment.json>` — **(Optional)** Path to the `enrichment.json` written in Phase 3 Step 3.10. **Auto-discovered** when the analysis JSON sits next to it (canonical layout: `.code-visualizer/codebase-analysis.json` + `.code-visualizer/enrichment.json`). The script merges this into the analysis data and fills all content sections automatically. Without enrichment (and no auto-discovered sibling), the visualization renders `[AI_FILL]` placeholders in every section — that's the silent-failure mode the auto-discover guards against, so always either keep the canonical layout or pass `--enrichment` explicitly.
+- `--enrichment <enrichment.json>` — **(Optional)** Path to the `enrichment.json` written in Phase 3 Step 3.10. **Auto-discovered** when the analysis JSON sits next to it (canonical layout: `.codebase-almanac/codebase-analysis.json` + `.codebase-almanac/enrichment.json`). The script merges this into the analysis data and fills all content sections automatically. Without enrichment (and no auto-discovered sibling), the visualization renders `[AI_FILL]` placeholders in every section — that's the silent-failure mode the auto-discover guards against, so always either keep the canonical layout or pass `--enrichment` explicitly.
 
 The script produces a single self-contained HTML file with the Pineapple Tropical Maximalist theme. It reads `visualization-base.css` from the project root automatically and embeds all CSS, JS, Mermaid diagrams, and an SVG pineapple hero illustration inline. Before embedding, it **normalizes Mermaid source** (subgraph spacing, common `erDiagram` type mistakes, colon-in-label edge cases, and dependency-node labels) so diagrams parse under **Mermaid.js 10+**, and it maps security finding text in order **`remediation` → `recommendation` → `detail`** into the **Recommendation:** row.
 
@@ -590,7 +590,7 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 
 ## Phase 5: Delivery
 
-1. **Clean up** — Delete `.code-visualizer/previews/` if it exists
+1. **Clean up** — Delete `.codebase-almanac/previews/` if it exists
 2. **Open in browser (mandatory)** — Always run `open <output.html>` (macOS) or `xdg-open <output.html>` (Linux) immediately after generation. Do not skip this step or ask whether the user wants it opened — just open it.
 3. **Summarize** — Tell the user:
    - File location, file size, visualization scope

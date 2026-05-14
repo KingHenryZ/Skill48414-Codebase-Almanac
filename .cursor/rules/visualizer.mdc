@@ -4,9 +4,9 @@ globs:
 alwaysApply: false
 ---
 
-# Code Visualizer — Cursor Integration
+# Skill48414: Codebase Almanac — Cursor Integration
 
-This rule activates the code-visualizer skill for Cursor. The full workflow is defined in `SKILL.md` at the project root.
+This rule activates the `codebase-almanac` skill for Cursor. The full workflow is defined in `SKILL.md` at the project root.
 
 ## Quick Reference
 
@@ -45,10 +45,10 @@ The user might say:
 - "Generate a code visualization"
 - "Show me the architecture of this project"
 - "Create an HTML map of this repo"
-- "Run the code visualizer on ./my-project"
+- "Run the codebase almanac on ./my-project"
 
 When any of these are detected, read `SKILL.md` and follow Phase 0.
 
-## Built-in Demo
+## Built-in Example
 
-If the user wants to try the visualizer without a target codebase, use the `example/` directory at the project root. It contains a TypeScript monorepo (API + shared package + CLI) that exercises all visualization features.
+If the user wants to try the almanac without a target codebase, use the `example/` directory at the project root. It is a small static TypeScript fixture (Express API + shared validation package) that exercises every tab. See `example/README.md` for details.

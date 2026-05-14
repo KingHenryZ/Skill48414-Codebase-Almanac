@@ -1,6 +1,6 @@
-# Code Visualizer Skill
+# Skill48414: Codebase Almanac
 
-This is a skill that makes a visual, interactive HTML map of a codebase.
+A skill that turns any codebase into a single interactive HTML **almanac** — chapters of maps, statistics, plain-language explanations, security findings, and recommendations in one navigable artifact for both technical and non-technical readers.
 
 If you are non-technical, you can ignore all internal files and just use the prompts below.
 
@@ -27,7 +27,7 @@ Visualize the codebase at /path/to/my/project
 If installed as a skill, call:
 
 ```text
-/code-visualizer
+/codebase-almanac
 ```
 
 Then say:

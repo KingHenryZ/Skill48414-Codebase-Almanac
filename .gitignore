@@ -36,9 +36,9 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Generated visualizer outputs (local artifacts)
-.code-visualizer/
-.code-visualizer-realworld/
+# Generated almanac outputs (local artifacts)
+.codebase-almanac/
+.codebase-almanac-realworld/
 *-visualization.html
 
 # example/ demo runtime artifacts (the demo SOURCE is committed; local runtime state is not)

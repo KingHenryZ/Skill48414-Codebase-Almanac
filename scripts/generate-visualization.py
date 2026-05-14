@@ -2906,8 +2906,8 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
     # Auto-discover enrichment.json sitting next to the analysis JSON when
     # the caller didn't pass --enrichment explicitly. This is the canonical
-    # SKILL.md layout (`.code-visualizer/codebase-analysis.json` +
-    # `.code-visualizer/enrichment.json`) — without auto-discovery the
+    # SKILL.md layout (`.codebase-almanac/codebase-analysis.json` +
+    # `.codebase-almanac/enrichment.json`) — without auto-discovery the
     # generator silently falls back to `[AI_FILL]` placeholders even when
     # a perfectly valid enrichment file exists, which is the worst kind of
     # silent failure for a visualization tool.
@@ -3705,7 +3705,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="generator" content="code-visualizer (SKILL.md)" />
+<meta name="generator" content="codebase-almanac (SKILL.md)" />
 <title>{esc(title_text)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
