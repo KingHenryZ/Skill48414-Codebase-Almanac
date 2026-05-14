@@ -189,7 +189,7 @@ Produce content for the Overview tab (same for both modes):
 
 **Overview hero structure (batch 3 lockdown):**
 - The Overview tab **does NOT** render: the project breadcrumb (`Project / Overview`), the "TROPICAL CODE CARTOGRAPHY" eyebrow, the four metric chips next to the pineapple (files / LOC / deps / symbols), or the two stray crown-leaf SVGs. Authors and downstream themes MUST NOT re-introduce them — they duplicate the metric cards immediately below and clutter the hero.
-- **Left of the pineapple** is reserved for **two evergreen `TBD` blocks** that render the SAME on every codebase. They are NOT templated against the analysis JSON. Authors fill them once at the skill level (tagline + methodology / mission), not per project.
+- **Left of the pineapple** is the **single evergreen block** (`.hero-evergreen`) — title (`Pineapple Code Cartography`) plus a one-paragraph tagline. It renders the SAME on every codebase. It is NOT templated against the analysis JSON. The tagline currently shipped is the AGI / Fibonacci-spirals manifesto in `scripts/generate-visualization.py`. Forks may rewrite it but MUST keep it as one paragraph and MUST NOT re-introduce a second evergreen block.
 - Codebase-specific name + AI-generated `project_summary` live exclusively in the `.codebase-card` section below the hero (gradient-bordered, gold-rind glow, gradient-text title).
 - The "Codebase at a Glance" duplicate paragraph above the summary cards has been replaced with a short navigation lede ("Explore by Tab") since the codebase-card now owns the summary role.
 - The language bar, metrics row, codebase-card, summary-grid, and the persistent bottom-left credits block are the only chrome on the Overview tab. **No** search bar, **no** Frameworks section, **no** Navigation section.
@@ -555,9 +555,9 @@ The Database tab is **conditionally shown**: if the extraction JSON contains no 
 - **Mermaid diagrams render at natural size** (`useMaxWidth: false`) so font sizes are consistent across the document
 - **4-tier Code Health Check** (Health / Sick / Severe Sick / Death) with a legend strip above the items
 - **Codebase intro card** below the pineapple — gradient-bordered, gold-rind glow, gradient-text title — owns the codebase name + AI summary (replaces the old left-of-pineapple eyebrow + headline)
-- **Two evergreen TBD blocks left of the pineapple** that are SAME on every codebase (skill-level intro, not codebase-specific)
+- **Single evergreen block left of the pineapple** (title + AGI / Fibonacci tagline) — same on every codebase, not templated from the analysis JSON
 - **Per-tab mode toggle** (Developer View / General View) replaces the breadcrumb on every non-Overview tab; the Overview tab has no breadcrumb either
-- **Persistent bottom-left credits block** (PineApple Team / @HenryZou + LinkedIn / @JennyZhang + LinkedIn TBD / 2026), darker semi-transparent background, responsive on small screens
+- **Persistent bottom-left credits block** (PineApple Team / @HenryZou + LinkedIn / @JennyZheng + LinkedIn / 2026), darker semi-transparent background, responsive on small screens
 - **3D pineapple hero illustration** with grounded crown leaves (no stray fragments outside the body)
 - Accessible tooltips on key terms (keyboard and screen reader friendly)
 - Pineapple-skin diamond-lattice dividers between sections

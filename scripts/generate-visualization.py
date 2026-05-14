@@ -3747,17 +3747,16 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
       <div class="hero">
         <!-- Left of the pineapple: EVERGREEN content that stays the same
-             on every visualization this skill produces. Batch 4 stripped
-             the dashed-box framing so the title + tagline sit directly
-             on the hero background, and removed the second block entirely. -->
+             on every visualization this skill produces. Title + tagline
+             sit directly on the hero background (un-boxed). -->
         <div class="hero-content">
-          <div class="hero-evergreen" data-tbd="1">
+          <div class="hero-evergreen">
             <h1 class="hero-evergreen-title">Pineapple Code Cartography
               <button class="tooltip-trigger" type="button"
                 data-tooltip="Use the tab bar to change view, or press 1-{len(tab_ids)} to jump between tabs."
                 aria-label="How to use this visualization">?</button>
             </h1>
-            <p class="hero-evergreen-body">[TBD &mdash; evergreen tagline / mission statement that stays the same across every codebase rendered with this skill.]</p>
+            <p class="hero-evergreen-body">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
           </div>
         </div>
         <div class="hero-art">{HERO_PINEAPPLE_SVG}</div>
