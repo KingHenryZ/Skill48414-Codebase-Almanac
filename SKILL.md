@@ -644,21 +644,13 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 
 ---
 
-## Phase 6: Share & Export (Optional)
+## Phase 6: Export (Optional)
 
-After delivery, ask: _"Would you like to share this visualization? I can deploy it to a live URL or export it as a PDF."_
+After delivery, ask: _"Would you like to export this visualization as a PDF?"_
 
-Options:
-- **Deploy to URL** — Shareable link via Vercel
-- **Export to PDF** — Static snapshot for documentation
-- **Both**
-- **No thanks**
+The output HTML is already self-contained — share it as a file (email, Slack, attach to a doc, commit to your own static host). No deploy step is shipped with this skill.
 
-### 6A: Deploy to Vercel
-
-Run `bash scripts/deploy.sh <path-to-html>`. See the script for full Vercel setup and login guidance.
-
-### 6B: Export to PDF
+### Export to PDF
 
 Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screenshots each tab view and combines into a PDF.
 
@@ -676,5 +668,4 @@ Run `bash scripts/export-pdf.sh <path-to-html> [output.pdf]`. The script screens
 | [visualization-base.css](visualization-base.css) | Mandatory responsive CSS — included by the script, or manually in alternate path | Phase 4 (generation) |
 | [html-template.md](html-template.md) | HTML skeleton, JS contracts, accessibility requirements | Phase 4 (manual generation only) |
 | [animation-patterns.md](animation-patterns.md) | Subtle interaction patterns for tree, tabs, cards | Phase 4 (manual generation only) |
-| [scripts/deploy.sh](scripts/deploy.sh) | Deploy visualization to Vercel | Phase 6 (sharing) |
-| [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (sharing) |
+| [scripts/export-pdf.sh](scripts/export-pdf.sh) | Export visualization to PDF | Phase 6 (export) |

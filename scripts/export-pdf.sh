@@ -100,7 +100,7 @@ cat > "$TEMP_SCRIPT" << 'EXPORT_SCRIPT'
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
-import { join, extname } from 'path';
+import { join, extname, resolve, sep } from 'path';
 
 const SERVE_DIR = process.argv[2];
 const HTML_FILE = process.argv[3];
@@ -108,6 +108,8 @@ const OUTPUT_PDF = process.argv[4];
 const SCREENSHOT_DIR = process.argv[5];
 const VP_WIDTH = parseInt(process.argv[6]) || 1920;
 const VP_HEIGHT = parseInt(process.argv[7]) || 1200;
+
+const SERVE_ROOT = resolve(SERVE_DIR);
 
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -117,8 +119,22 @@ const MIME_TYPES = {
 };
 
 const server = createServer((req, res) => {
-  const decodedUrl = decodeURIComponent(req.url);
-  let filePath = join(SERVE_DIR, decodedUrl === '/' ? HTML_FILE : decodedUrl);
+  let decodedUrl;
+  try {
+    decodedUrl = decodeURIComponent(req.url);
+  } catch {
+    res.writeHead(400);
+    return res.end('Bad request');
+  }
+
+  const requestedPath = decodedUrl === '/' ? HTML_FILE : decodedUrl;
+  const filePath = resolve(join(SERVE_ROOT, requestedPath));
+
+  if (filePath !== SERVE_ROOT && !filePath.startsWith(SERVE_ROOT + sep)) {
+    res.writeHead(403);
+    return res.end('Forbidden');
+  }
+
   try {
     const content = readFileSync(filePath);
     const ext = extname(filePath).toLowerCase();

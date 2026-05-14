@@ -68,14 +68,6 @@ Say exactly:
 Visualize /path/to/my/project
 ```
 
-## Optional: Share It As A Link
-
-After your HTML is generated, ask:
-
-```text
-Deploy this visualization and give me the live link
-```
-
 ## Optional: Save As PDF
 
 After your HTML is generated, ask:
@@ -84,5 +76,6 @@ After your HTML is generated, ask:
 Export this visualization to PDF
 ```
 
-TESTING TRY FOR MEETING ONE 
-HI
+## Sharing The HTML
+
+The output is a single self-contained `.html` file. Share it the way you share any file: email it, drop it in Slack, attach it to a doc, or commit it to your own static host (GitHub Pages, S3, Netlify, etc.).
