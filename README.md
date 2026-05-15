@@ -104,20 +104,6 @@ Run it on /Users/yourname/path/to/your-project
 
 The output is written to `.codebase-almanac/visualization-YYYYMMDD-HHMMSS.html` inside your target project. Every run produces a fresh, timestamped file — old ones are kept for comparison.
 
-### Sharing the result
-
-The output is a single `.html` file with no external dependencies (Mermaid diagrams render via CDN, everything else is inline). Share it any way you share files:
-
-- Email it
-- Drop it in Slack / Discord / Teams
-- Attach to a doc / Notion page
-- Commit to a GitHub Pages branch
-- Drop on S3, Netlify, Vercel, Cloudflare Pages — any static host
-
-To save it as a PDF, just open it in any browser and use **File → Print → Save as PDF**. The HTML has print styles built in.
-
----
-
 ## What's In Each Tab
 
 The output has up to **8 tabs**. Every tab (except Overview) has a **Developer View** for engineers and a **General View** for non-technical readers — toggle inside the tab.
@@ -133,13 +119,12 @@ The output has up to **8 tabs**. Every tab (except Overview) has a **Developer V
 | **Pitch** | A one-line headline, a "tell your story" narrative, who it's for, why it matters, what makes it special, architecture strengths, and tech-stack justification. The page for talking *about* the codebase to humans. |
 | **Simulation** | "What if it takes off?" scenarios — 10× / 100× / 1000× growth, what comes next, growing pains, team scaling, and a step-by-step big-picture roadmap. |
 
-Navigation: tabs along the top, file tree in the left sidebar, keyboard shortcuts `1`–`8` to jump between tabs.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Use it, fork it, ship it, sell it. No warranty.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
