@@ -183,25 +183,92 @@ html::after {
 }
 .tab-panel > * { position: relative; z-index: 1; }
 
-/* Floating tropical emoji border */
-body::after {
-  content: "🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭";
+/* Floating tropical emoji strip (real element — allows layered waves; see markup after <body>) */
+.tropical-top-banner {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  padding: 6px 12px;
-  text-align: center;
-  font-size: 18px;
-  letter-spacing: 12px;
-  background: linear-gradient(90deg, #F4A300, #FFD700, #4CAF50, #FFD700, #F4A300);
-  border-bottom: 3px solid var(--rind);
-  box-shadow: 0 2px 10px rgba(92, 58, 26, 0.25);
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 500;
   pointer-events: none;
-  animation: tropicalScroll 35s linear infinite;
+  overflow: hidden;
+  border-bottom: 3px solid var(--rind);
+  box-shadow: 0 2px 10px rgba(92, 58, 26, 0.25);
+  background-image: linear-gradient(
+    90deg,
+    #F4A300 0%,
+    #FFD700 22%,
+    #4CAF50 48%,
+    #FFD700 74%,
+    #F4A300 100%
+  );
+  background-size: 200% 100%;
+  animation: tropicalBannerGradientWave 26s linear infinite;
 }
-@keyframes tropicalScroll {
-  from { background-position: 0% 50%; }
-  to   { background-position: 200% 50%; }
+@keyframes tropicalBannerGradientWave {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Sliding wave tiles along the bottom of the banner */
+.tropical-top-banner-wave {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  bottom: 0;
+  height: 72%;
+  min-height: 20px;
+  opacity: 0.85;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 28' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' fill-opacity='0.14' d='M0 16 Q30 8 60 16 T120 16 L120 28 L0 28z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 28' preserveAspectRatio='none'%3E%3Cpath fill='%231b3d0c' fill-opacity='0.10' d='M0 14 Q30 22 60 14 T120 14 L120 28 L0 28z'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat-x;
+  background-position: 0 100%, 60px 100%;
+  background-size: 180px 100%, 220px 100%;
+  animation: tropicalBannerSeaWave 9s linear infinite;
+}
+@keyframes tropicalBannerSeaWave {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-180px, 0, 0); }
+}
+
+/* Gentle vertical swell on emojis — same as visualization-20260517-032213 (whole-row bob) */
+.tropical-top-banner-emoji {
+  display: block;
+  position: relative;
+  z-index: 1;
+  padding: 8px 12px 10px;
+  font-size: 18px;
+  line-height: 1.35;
+  /* 032213 used 10px letter-spacing — widened further between glyphs */
+  letter-spacing: 22px;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 0 rgba(255, 250, 220, 0.45),
+    0 2px 8px rgba(92, 58, 26, 0.28);
+  animation: tropicalBannerEmojiBob 3.6s ease-in-out infinite;
+}
+@keyframes tropicalBannerEmojiBob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -4px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tropical-top-banner,
+  .tropical-top-banner-wave,
+  .tropical-top-banner-emoji {
+    animation: none !important;
+  }
+  .tropical-top-banner-wave {
+    opacity: 0.55;
+    transform: none;
+  }
+}
+@media print {
+  .tropical-top-banner {
+    display: none !important;
+  }
 }
 
 .app-layout { position: relative; z-index: 1; padding-top: 36px; }
@@ -1522,7 +1589,7 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 
 /* === Health-status indicators (4-tier scale, batch 3 rename) ========
    Replaces the legacy traffic-light Good/Yellow/Red trio with a four-tier
-   Health / Sick / Severe Sick / Death scale that uses the warm pineapple
+   Health / Sick / Critically Ill / Death Penalty scale that uses the warm pineapple
    palette (leaf / gold / rind / chili-black). Legacy class names
    (.traffic-green / .traffic-yellow / .traffic-red) are aliased so
    existing enrichment payloads (e.g. the Security tab's `safety_color`)
@@ -7000,7 +7067,12 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         tab_ids.append("database")
         tab_labels["database"] = "Database"
     tab_ids += ["security", "suggestions", "pitch", "simulation"]
-    tab_labels.update({"security": "Security", "suggestions": "Suggestions", "pitch": "Pitch", "simulation": "Simulation"})
+    tab_labels.update({
+        "security": "Security",
+        "suggestions": "Strategic Recommendations",
+        "pitch": "Idea Validation",
+        "simulation": "Future Outlook",
+    })
 
     tab_icons = {
         "overview": "📊", "product": "🛍️", "technical": "⚙️", "database": "🗄️",
@@ -7103,7 +7175,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         for n in pitch_numbers if isinstance(n, dict)
     )
 
-    # === Code Health Check: 4-tier scale (Health / Sick / Severe Sick / Death) ===
+    # === Code Health Check: 4-tier scale (Health / Sick / Critically Ill / Death Penalty) ===
     # Enrichment may use either the new 4-tier color tokens (`health`, `sick`,
     # `severe`, `death`) or the legacy 3-tier (`green`, `yellow`, `red`). We
     # map both to the same .traffic-* CSS classes; if the author also omits a
@@ -7111,16 +7183,16 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
     HEALTH_TIER_MAP = {
         "health": ("health", "Health"),
         "sick": ("sick", "Sick"),
-        "severe": ("severe", "Severe Sick"),
-        "severe-sick": ("severe", "Severe Sick"),
-        "severe_sick": ("severe", "Severe Sick"),
-        "death": ("death", "Death"),
+        "severe": ("severe", "Critically Ill"),
+        "severe-sick": ("severe", "Critically Ill"),
+        "severe_sick": ("severe", "Critically Ill"),
+        "death": ("death", "Death Penalty"),
         # Legacy
         "green": ("health", "Health"),
         "yellow": ("sick", "Sick"),
-        "orange": ("severe", "Severe Sick"),
-        "red": ("severe", "Severe Sick"),
-        "black": ("death", "Death"),
+        "orange": ("severe", "Critically Ill"),
+        "red": ("severe", "Critically Ill"),
+        "black": ("death", "Death Penalty"),
     }
     health_html = ""
     for h in tech_easy_health_items:
@@ -7145,8 +7217,8 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         '<span class="health-legend-label">Scale</span>'
         '<span class="traffic-light traffic-health">Health</span>'
         '<span class="traffic-light traffic-sick">Sick</span>'
-        '<span class="traffic-light traffic-severe">Severe Sick</span>'
-        '<span class="traffic-light traffic-death">Death</span>'
+        '<span class="traffic-light traffic-severe">Critically Ill</span>'
+        '<span class="traffic-light traffic-death">Death Penalty</span>'
         '</div>'
     )
 
@@ -7185,6 +7257,12 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 </style>
 </head>
 <body>
+<div class="tropical-top-banner" aria-hidden="true">
+  <div class="tropical-top-banner-wave" aria-hidden="true"></div>
+  <span class="tropical-top-banner-emoji">
+    🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭
+  </span>
+</div>
 <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">&#9776;</button>
 <div class="app-layout">
   <!-- === SIDEBAR === -->
@@ -7375,7 +7453,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
         <h2>Code health check</h2>
         {health_legend_html}
-        {health_html or '<p data-searchable>[AI_FILL: Code health check \u2014 four-tier ratings (Health / Sick / Severe Sick / Death) for organization, complexity, consistency, size]</p>'}
+        {health_html or '<p data-searchable>[AI_FILL: Code health check \u2014 four-tier ratings (Health / Sick / Critically Ill / Death Penalty) for organization, complexity, consistency, size]</p>'}
       </div>
     </section>
 
@@ -7585,7 +7663,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 </div>
 
 <aside class="credits" aria-label="Credits">
-  <div class="credits-line credits-team">designed by the <strong>PineApple Team</strong></div>
+  <div class="credits-line credits-team">Designed by the <strong>Pineapple Team</strong></div>
   <div class="credits-line">
     <span class="credits-handle">@HenryZou</span>
     <a class="credits-link" href="https://www.linkedin.com/in/cunhanzou/" target="_blank" rel="noopener noreferrer"
