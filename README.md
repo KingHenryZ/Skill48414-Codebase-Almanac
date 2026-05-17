@@ -1,8 +1,8 @@
 # Skill48414: Codebase Almanac
 
-This skill streamlines the "vibe-coding" experience by providing a clear visual map of your codebase. Designed for both engineers and non-engineers to assemble contexts by offering actionable insights and intelligent suggestions for product features, architectural improvements, security risks, databases, and idea validation process.
+This skill streamlines the "vibe-coding" experience by providing a clear visual map of your codebase. Designed for both engineers and non-engineers to assemble contexts by offering actionable insights and intelligent suggestions for product features, architectural improvements, security risks, databases, and the idea validation process.
 
-You point it at a folder of code. It produces **one self-contained HTML file** that opens in any browser. That file is the "almanac" — chapters of maps, statistics, plain-language explanations, findings, and suggestions, all in one place, readable by engineers and non-engineers alike.
+> You point it at a folder of code. It produces **one self-contained HTML file** that opens in any browser. That file is the "almanac" — chapters of maps, statistics, plain-language explanations, findings, and suggestions, all in one place, readable by engineers and non-engineers alike.
 
 ---
 
