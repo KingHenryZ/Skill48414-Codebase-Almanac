@@ -1,12 +1,12 @@
 # Skill48414: Codebase Almanac
 
-> This skill streamlines the "vibe-coding" experience by providing a clear visual map of your codebase. Designed for both engineers and product managers, it offers actionable insights and intelligent suggestions for product features, architectural improvements, and security risks.
+This skill streamlines the "vibe-coding" experience by providing a clear visual map of your codebase. Designed for both engineers and non-engineers to assemble contexts by offering actionable insights and intelligent suggestions for product features, architectural improvements, security risks, databases, and idea validation process.
 
 You point it at a folder of code. It produces **one self-contained HTML file** that opens in any browser. That file is the "almanac" — chapters of maps, statistics, plain-language explanations, findings, and suggestions, all in one place, readable by engineers and non-engineers alike.
 
 ---
 
-## Get It From GitHub (3 minutes, first-time setup)
+## Get It From GitHub
 
 You only do this once.
 
@@ -22,18 +22,7 @@ If you see something like `Python 3.10.4` you're done. If you see `command not f
 
 **No other tools to install.** No `pip install`, no `npm install`. The skill uses only the Python standard library.
 
-### Step 2 — Download the skill
-
-Pick **one** of these two ways.
-
-**Option A — `git clone` (recommended if you have git):**
-
-```bash
-git clone https://github.com/KingHenryZ/Project48414.git
-cd Project48414
-```
-
-**Option B — Download the ZIP:**
+### Step 2 — Download the skill ZIP
 
 1. Open <https://github.com/KingHenryZ/Project48414> in your browser
 2. Click the green **Code** button → **Download ZIP**
@@ -56,7 +45,7 @@ The skill is now available as `/codebase-almanac` inside Claude Code.
 
 ---
 
-## Use It (the actual work)
+## Use It
 
 ### First: try the built-in example
 
@@ -128,7 +117,7 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-## The Pineapple Team
+## The Pineapple Project Team
 
 Made by:
 
