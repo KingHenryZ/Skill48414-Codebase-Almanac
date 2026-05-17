@@ -7,16 +7,36 @@ produced by `scripts/extract-codebase.py`. Follows the contracts in SKILL.md
 and visualization-base.css.
 
 Usage:
-  python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name]
+  python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name] [--no-open]
 """
 
 from __future__ import annotations
 
 import html
 import json
+import os
 import re
+import subprocess
 import sys
+import webbrowser
 from pathlib import Path
+
+
+def _open_generated_html(path: Path) -> None:
+    """Open the visualization in the user's default handler (browser on desktop)."""
+
+    resolved = path.resolve()
+    if not resolved.is_file():
+        return
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", str(resolved)], check=False)
+        elif sys.platform == "win32":
+            os.startfile(str(resolved))  # type: ignore[attr-defined]
+        else:
+            webbrowser.open(resolved.as_uri())
+    except Exception:
+        pass
 
 
 # ── Theme: pineapple tropical maximalist ───────────────────────────────
@@ -163,25 +183,92 @@ html::after {
 }
 .tab-panel > * { position: relative; z-index: 1; }
 
-/* Floating tropical emoji border */
-body::after {
-  content: "🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭";
+/* Floating tropical emoji strip (real element — allows layered waves; see markup after <body>) */
+.tropical-top-banner {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  padding: 6px 12px;
-  text-align: center;
-  font-size: 18px;
-  letter-spacing: 12px;
-  background: linear-gradient(90deg, #F4A300, #FFD700, #4CAF50, #FFD700, #F4A300);
-  border-bottom: 3px solid var(--rind);
-  box-shadow: 0 2px 10px rgba(92, 58, 26, 0.25);
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 500;
   pointer-events: none;
-  animation: tropicalScroll 35s linear infinite;
+  overflow: hidden;
+  border-bottom: 3px solid var(--rind);
+  box-shadow: 0 2px 10px rgba(92, 58, 26, 0.25);
+  background-image: linear-gradient(
+    90deg,
+    #F4A300 0%,
+    #FFD700 22%,
+    #4CAF50 48%,
+    #FFD700 74%,
+    #F4A300 100%
+  );
+  background-size: 200% 100%;
+  animation: tropicalBannerGradientWave 26s linear infinite;
 }
-@keyframes tropicalScroll {
-  from { background-position: 0% 50%; }
-  to   { background-position: 200% 50%; }
+@keyframes tropicalBannerGradientWave {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Sliding wave tiles along the bottom of the banner */
+.tropical-top-banner-wave {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  bottom: 0;
+  height: 72%;
+  min-height: 20px;
+  opacity: 0.85;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 28' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' fill-opacity='0.14' d='M0 16 Q30 8 60 16 T120 16 L120 28 L0 28z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 28' preserveAspectRatio='none'%3E%3Cpath fill='%231b3d0c' fill-opacity='0.10' d='M0 14 Q30 22 60 14 T120 14 L120 28 L0 28z'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat-x;
+  background-position: 0 100%, 60px 100%;
+  background-size: 180px 100%, 220px 100%;
+  animation: tropicalBannerSeaWave 9s linear infinite;
+}
+@keyframes tropicalBannerSeaWave {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-180px, 0, 0); }
+}
+
+/* Gentle vertical swell on emojis — same as visualization-20260517-032213 (whole-row bob) */
+.tropical-top-banner-emoji {
+  display: block;
+  position: relative;
+  z-index: 1;
+  padding: 8px 12px 10px;
+  font-size: 18px;
+  line-height: 1.35;
+  /* 032213 used 10px letter-spacing — widened further between glyphs */
+  letter-spacing: 22px;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 0 rgba(255, 250, 220, 0.45),
+    0 2px 8px rgba(92, 58, 26, 0.28);
+  animation: tropicalBannerEmojiBob 3.6s ease-in-out infinite;
+}
+@keyframes tropicalBannerEmojiBob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -4px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tropical-top-banner,
+  .tropical-top-banner-wave,
+  .tropical-top-banner-emoji {
+    animation: none !important;
+  }
+  .tropical-top-banner-wave {
+    opacity: 0.55;
+    transform: none;
+  }
+}
+@media print {
+  .tropical-top-banner {
+    display: none !important;
+  }
 }
 
 .app-layout { position: relative; z-index: 1; padding-top: 36px; }
@@ -752,6 +839,103 @@ code {
 }
 ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #FFD700, #2E7D32); }
 
+/* ═══ Team intro banner (above pineapple / 48414 hero) ═══ */
+.team-intro-banner {
+  margin: 0 -32px 18px;
+  padding-block-start: clamp(14px, 2.15vw, 22px);
+  padding-block-end: clamp(10px, 1.35vw, 15px);
+  padding-inline-start: clamp(14px, 2.8vw, 26px);
+  padding-inline-end: clamp(22px, 3.6vw, 40px);
+  border-radius: 18px;
+  border: 2px solid rgba(212, 160, 23, 0.65);
+  background:
+    linear-gradient(
+      105deg,
+      rgba(76, 175, 80, 0.22) 0%,
+      rgba(255, 236, 179, 0.92) 38%,
+      rgba(255, 249, 230, 0.98) 72%
+    ),
+    var(--pineapple-skin-thick);
+  background-size: auto, 96px 32px;
+  box-shadow:
+    0 10px 28px rgba(139, 90, 43, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(139, 90, 43, 0.08);
+  display: grid;
+  grid-template-columns: fit-content(10.75rem) minmax(0, 1fr);
+  column-gap: clamp(24px, 4.8vw, 52px);
+  row-gap: 10px;
+  align-items: start;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.team-intro-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-soft);
+  background-size: 260px 260px;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+.team-intro-banner > * {
+  position: relative;
+  z-index: 1;
+}
+.team-banner-title-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 0;
+  margin-top: calc(-1 * clamp(22px, 3.2vw, 38px));
+}
+.team-banner-title {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: clamp(1.25rem, 2.65vw, 1.92rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--leaf-deep);
+  margin: 0;
+  padding: 2px 0 0;
+  max-width: 10.75rem;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.team-banner-body {
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 1.32vw, 1.03rem);
+  line-height: 1.62;
+  color: var(--text-secondary);
+  margin: 0;
+  padding: 2px 0 0;
+  max-width: none;
+  text-wrap: balance;
+  padding-inline-start: clamp(12px, 2.8vw, 32px);
+  border-inline-start: 1px solid rgba(139, 90, 43, 0.12);
+}
+@media (max-width: 680px) {
+  .team-intro-banner {
+    grid-template-columns: 1fr;
+    padding-inline-start: clamp(16px, 3.2vw, 28px);
+    padding-inline-end: clamp(16px, 3.2vw, 28px);
+  }
+  .team-banner-title-cell {
+    align-items: flex-start;
+    margin-top: 0;
+  }
+  .team-banner-title {
+    align-self: stretch;
+    max-width: none;
+  }
+  .team-banner-body {
+    padding-inline-start: 0;
+    border-inline-start: none;
+  }
+}
+
 /* ═══ HERO ═══ */
 
 .hero {
@@ -877,7 +1061,13 @@ code {
   z-index: 1;
   pointer-events: none;
   transform: rotate(2deg);
-  filter: drop-shadow(0 28px 42px rgba(139, 90, 43, 0.34));
+  /* Ground shadow + warm gold / emerald outer glow around the pineapple */
+  filter:
+    drop-shadow(0 28px 42px rgba(139, 90, 43, 0.34))
+    drop-shadow(0 0 18px rgba(255, 206, 120, 0.55))
+    drop-shadow(0 0 40px rgba(255, 230, 180, 0.32))
+    drop-shadow(0 0 28px rgba(76, 175, 95, 0.22))
+    drop-shadow(0 -4px 24px rgba(255, 255, 245, 0.12));
   animation: heroFloat 9s ease-in-out infinite;
   display: flex;
   align-items: center;
@@ -891,7 +1081,7 @@ code {
   /* `contain` keeps the entire SVG visible regardless of how big the
      hero-art frame grows — no clipping at any viewport. */
   object-fit: contain;
-  object-position: right center;
+  object-position: calc(100% - clamp(24px, 4vw, 56px)) center;
 }
 @keyframes heroFloat {
   0%, 100% { transform: rotate(2deg) translateY(0); }
@@ -916,10 +1106,68 @@ code {
 }
 .hero-evergreen-title {
   font-size: clamp(2rem, 4vw, 3.2rem) !important;
-  line-height: 1.04;
-  margin: 0 0 14px !important;
+  line-height: 1.35;
+  margin: 0 0 18px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-shadow: none;
+  /* Cancel the global h1 gradient-text + ::after decoration bar
+     so each span's own color wins. */
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: initial !important;
+  padding-bottom: 0 !important;
+}
+.hero-evergreen-title::after { display: none !important; }
+.hero-title-main,
+.hero-title-sub {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: none;
+}
+.hero-title-main {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", "Montserrat",
+               sans-serif;
+  font-weight: 800;
+  font-style: normal;
+  font-size: 1em;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: var(--leaf-deep);
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+.hero-title-sub {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-style: italic;
+  font-size: 0.5em;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+  color: var(--leaf-deep);
+  opacity: 0.78;
+  display: inline-block;
+  width: max-content;
+  max-width: min(100%, 42rem);
+}
+/* Pineapple-skin geometric underline (same motif as section dividers). */
+.hero-title-sub::after {
+  content: "";
+  display: block;
+  height: clamp(14px, 2.35vw, 22px);
+  width: 100%;
+  margin: 10px 0 0;
+  border: 0;
+  border-radius: 0;
+  background-image: var(--pineapple-skin-thick);
+  background-repeat: repeat-x;
+  background-position: left center;
+  background-size: auto 100%;
+  filter: drop-shadow(0 1px 2px rgba(139, 90, 43, 0.22));
+  opacity: 0.95;
 }
 .hero-evergreen-body {
   font-family: var(--font-body);
@@ -928,6 +1176,9 @@ code {
   color: var(--text-secondary);
   margin: 0;
   max-width: 56ch;
+}
+.hero-evergreen .hero-evergreen-body + .hero-evergreen-body {
+  margin-top: 0.85em;
 }
 /* Legacy class fallbacks (kept so old rules don't suddenly mismatch). */
 .hero-tbd-block { all: unset; display: block; }
@@ -1212,6 +1463,16 @@ hr {
   margin-top: 1.2em;
 }
 
+/* Overview only: Language Breakdown → Explore by Tab */
+#panel-overview .lang-bar-container {
+  margin-bottom: 2px;
+}
+#panel-overview .lang-bar-container + h2 {
+  margin-top: 0.95em;
+  padding-top: 12px;
+  background-size: auto 14px;
+}
+
 .tab-panel h1::after {
   content: "";
   display: block;
@@ -1328,7 +1589,7 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 
 /* === Health-status indicators (4-tier scale, batch 3 rename) ========
    Replaces the legacy traffic-light Good/Yellow/Red trio with a four-tier
-   Health / Sick / Severe Sick / Death scale that uses the warm pineapple
+   Health / Sick / Critically Ill / Death Penalty scale that uses the warm pineapple
    palette (leaf / gold / rind / chili-black). Legacy class names
    (.traffic-green / .traffic-yellow / .traffic-red) are aliased so
    existing enrichment payloads (e.g. the Security tab's `safety_color`)
@@ -1478,6 +1739,51 @@ body:not(.easy-mode) .easy-only { display: none !important; }
   cursor: default;
   opacity: 1;
   pointer-events: none;
+}
+
+/* === Boss View glow (Pitch + Simulation) ============================
+   TranslateY lift + colored box-shadow halo tinted in pineapple gold
+   so it matches the theme. Applied to both .pitch-panel and
+   .simulation-panel so the single decorative "Boss View" pill pulses on both tabs. Selector
+   includes `.panel-header` and `button.active` so it beats
+   `.panel-header .mode-toggle button.active` further down the
+   stylesheet. The pill is non-interactive, so the glow is always-on
+   with a gentle pulse for visibility. Respects prefers-reduced-motion. */
+.pitch-panel .panel-header .mode-toggle.boss-view-toggle > button.active,
+.pitch-panel .panel-header .mode-toggle.boss-view-toggle > button,
+.simulation-panel .panel-header .mode-toggle.boss-view-toggle > button.active,
+.simulation-panel .panel-header .mode-toggle.boss-view-toggle > button {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 0 var(--rind),
+    0 0 0 1.5px rgba(255, 215, 0, 0.7),
+    0 4px 16px rgba(255, 215, 0, 0.6),
+    0 0 32px rgba(255, 179, 0, 0.45);
+  animation: bossViewPulse 2.4s ease-in-out infinite;
+}
+@keyframes bossViewPulse {
+  0%, 100% {
+    box-shadow:
+      0 2px 0 var(--rind),
+      0 0 0 1.5px rgba(255, 215, 0, 0.7),
+      0 4px 16px rgba(255, 215, 0, 0.6),
+      0 0 32px rgba(255, 179, 0, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 2px 0 var(--rind),
+      0 0 0 2px rgba(255, 215, 0, 0.95),
+      0 6px 26px rgba(255, 215, 0, 0.95),
+      0 0 56px rgba(255, 179, 0, 0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pitch-panel .panel-header .mode-toggle.boss-view-toggle > button.active,
+  .pitch-panel .panel-header .mode-toggle.boss-view-toggle > button,
+  .simulation-panel .panel-header .mode-toggle.boss-view-toggle > button.active,
+  .simulation-panel .panel-header .mode-toggle.boss-view-toggle > button {
+    animation: none;
+  }
 }
 
 /* === Pitch tab (batch 6: page background reverted to default) ====== */
@@ -2338,130 +2644,3358 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 """
 
 
-# ── Hero illustration: 3D pineapple in SVG ─────────────────────────────
-# All crown leaves attach to a single point at (320, 360) on the body's
-# upper rim. There are no decorative leaves floating outside the fruit.
-HERO_PINEAPPLE_SVG = """\
+# ── Pineapple scale grid generator ─────────────────────────────────────
+# Builds an explicit grid of <rect> scales for the pineapple body. Each
+# scale is colored either "scale-yellow" (the 8-count spiral direction,
+# warm golden #FFD700) or "scale-green" (the 13-count spiral direction,
+# deep jungle #2D4A2D), assigned by parity of (col+row) so adjacent
+# diagonals alternate. The whole grid is rotated 45° around the body
+# center via a parent <g transform>, so each square becomes an upright
+# interlocking diamond, with seam grooves stroked in near-black #0D1A0D.
+
+_TILE = 56  # was 36 — bumped to match a real pineapple's eye density.
+            # Real pineapples display Fibonacci phyllotactic spirals
+            # of 8 / 13 / 21 (gradual / medium / steep slope), totalling
+            # ~100 visible eyes on one side. With tile=56 and the body
+            # silhouette mask, this grid produces ~80-100 visible scales
+            # whose diagonal counts roughly approximate that pattern
+            # (~6-9 along the gradual diagonal, ~9-13 along the steeper
+            # one). True golden-angle phyllotaxis would require a
+            # Vogel-spiral placement, but a 45°-rotated square grid
+            # at this tile size lands in the right visual neighborhood.
+_GRID_RADIUS = 380  # pre-rotation half-extent (must cover body after 45°)
+_GRID_CX, _GRID_CY = 320, 585
+_GRID_N = _GRID_RADIUS // _TILE + 1
+
+
+def _build_pineapple_scales_html() -> str:
+    rects = []
+    for col in range(-_GRID_N, _GRID_N + 1):
+        for row in range(-_GRID_N, _GRID_N + 1):
+            x = _GRID_CX + col * _TILE - _TILE / 2
+            y = _GRID_CY + row * _TILE - _TILE / 2
+            cls = "scale-yellow" if (col + row) % 2 == 0 else "scale-green"
+            rects.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" '
+                f'width="{_TILE}" height="{_TILE}" class="{cls}"/>'
+            )
+    return "\n        ".join(rects)
+
+
+def _build_pineapple_intersection_dots_html() -> str:
+    """Tiny dark circles at every grid corner — the shadow pockets where
+    four scales meet. After the parent 45° rotation these land exactly
+    on the X-junction between adjacent diamonds."""
+    dots = []
+    for col in range(-_GRID_N, _GRID_N + 1):
+        for row in range(-_GRID_N, _GRID_N + 1):
+            x = _GRID_CX + col * _TILE
+            y = _GRID_CY + row * _TILE
+            dots.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" '
+                f'r="1.6" class="scale-pocket"/>'
+            )
+    return "\n        ".join(dots)
+
+
+def _build_pineapple_dome_scales_html() -> str:
+    """Build per-scale rects for the raised-dome pineapple skin.
+
+    Each scale carries a class `.dome-tN` (N=0..3) chosen by the
+    scale's SCREEN-SPACE distance from an upper-center light source.
+    Closer to the light → lower tier index → brighter dome gradient.
+    Rects are inset inside their grid cells so the dark body fills
+    the gaps as deep carved groove channels.
+
+    Critically, we compute the screen position by applying the same
+    +45° rotation that the parent <g transform="rotate(45 320 585)">
+    will apply at render time — so a scale that LOOKS like it sits
+    at the top of the body in screen space gets the bright tier even
+    though its pre-rotation grid coords don't reflect that directly.
+    """
+    import math
+    cos45 = math.cos(math.radians(45))
+    sin45 = math.sin(math.radians(45))
+
+    light_cx, light_cy = 320, 380     # upper-center of the body
+    inset = 2.5                        # px of pre-rotation gap on each side
+    half = _TILE / 2
+
+    # Tier thresholds (px from light source in screen space).
+    t0_max = 175  # bright top zone
+    t1_max = 280  # upper-mid
+    t2_max = 380  # lower-mid
+
+    rects = []
+    for col in range(-_GRID_N, _GRID_N + 1):
+        for row in range(-_GRID_N, _GRID_N + 1):
+            x = _GRID_CX + col * _TILE - half + inset
+            y = _GRID_CY + row * _TILE - half + inset
+            w = _TILE - 2 * inset
+
+            # Project the scale center through the parent rotation so
+            # the lighting tier matches what we'll see on screen.
+            ox = col * _TILE
+            oy = row * _TILE
+            sx = _GRID_CX + ox * cos45 - oy * sin45
+            sy = _GRID_CY + ox * sin45 + oy * cos45
+            dist = math.hypot(sx - light_cx, sy - light_cy)
+            if dist < t0_max:
+                tier = 0
+            elif dist < t1_max:
+                tier = 1
+            elif dist < t2_max:
+                tier = 2
+            else:
+                tier = 3
+
+            rects.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" '
+                f'width="{w:.1f}" height="{w:.1f}" class="dome-t{tier}"/>'
+            )
+    return "\n        ".join(rects)
+
+
+def _build_pineapple_crystal_facets_html() -> str:
+    """Per-scale rendering for the prismatic crystal pineapple.
+
+    Each scale is deterministically assigned one of four brightness
+    tiers — bright near-white / lit gold / mid amber / deep amber —
+    based on a pseudo-random stable per-cell hash. Stable seed means
+    the shimmer pattern is identical across runs (no diff churn). The
+    distribution is biased toward the mid tiers so bright facets
+    really pop as accents and dark facets read as deep shadow pockets.
+    """
+    import random
+    rng = random.Random(48414)  # stable seed → identical pattern every run
+    rects = []
+    for col in range(-_GRID_N, _GRID_N + 1):
+        for row in range(-_GRID_N, _GRID_N + 1):
+            x = _GRID_CX + col * _TILE - _TILE / 2
+            y = _GRID_CY + row * _TILE - _TILE / 2
+            r = rng.random()
+            # Distribution: 18% bright / 32% lit / 32% mid / 18% deep.
+            if r < 0.18:
+                tier = 0
+            elif r < 0.50:
+                tier = 1
+            elif r < 0.82:
+                tier = 2
+            else:
+                tier = 3
+            rects.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" '
+                f'width="{_TILE}" height="{_TILE}" class="facet-t{tier}"/>'
+            )
+    return "\n        ".join(rects)
+
+
+_PINEAPPLE_SCALES_HTML = _build_pineapple_scales_html()
+_PINEAPPLE_POCKETS_HTML = _build_pineapple_intersection_dots_html()
+_PINEAPPLE_CRYSTAL_FACETS_HTML = _build_pineapple_crystal_facets_html()
+_PINEAPPLE_DOME_SCALES_HTML = _build_pineapple_dome_scales_html()
+
+
+def _build_pineapple_fibonacci_spirals_html() -> str:
+    """Build three Fibonacci-spiral overlay families (8 / 13 / 21).
+
+    Each family is a set of parallel straight line segments spanning
+    the body silhouette at a specific slope. Lines are clipped to the
+    body via the parent <g clip-path>, so they always end at the
+    pineapple's edge no matter how the spirals are angled.
+
+    Slopes are chosen to evoke real pineapple phyllotaxis:
+      • 8 spirals  ↘  gentle ~28° slope (the gradual diagonal)
+      • 13 spirals ↗  medium ~55° slope (the steeper diagonal)
+      • 21 spirals │  near-vertical ~82° (the parallel ribs)
+    """
+    import math
+
+    cx, cy = _SPIRAL_BODY_CX, _SPIRAL_BODY_CY
+    rx, ry = _SPIRAL_BODY_RX, _SPIRAL_BODY_RY  # body half-axes
+
+    def lines_at_slope(angle_deg: float, count: int, family: str) -> str:
+        angle_rad = math.radians(angle_deg)
+        dx = math.cos(angle_rad)
+        dy = math.sin(angle_rad)
+        # Perpendicular direction (for spacing the parallel lines).
+        px, py = -dy, dx
+        # True perpendicular extent of an ellipse at this angle:
+        # max |px*x + py*y| over the ellipse = sqrt((px*rx)² + (py*ry)²).
+        # Using this exact extent (instead of the bounding-box projection)
+        # ensures every offset lands inside the body so all 8/13/21 lines
+        # actually intersect the silhouette.
+        max_perp = math.hypot(px * rx, py * ry)
+        out = []
+        for i in range(count):
+            t = (i + 0.5) / count - 0.5  # span -0.5 → +0.5
+            # Inset to 0.92 keeps even the outermost lines well inside
+            # the body (the extreme tangent lines can still be skipped
+            # by the discriminant check below if they fall just outside).
+            offset = t * 2 * max_perp * 0.92
+            ox = cx + px * offset
+            oy = cy + py * offset
+            # Intersect line (ox + dx*s, oy + dy*s) with body ellipse.
+            ax = (ox - cx) / rx
+            ay = (oy - cy) / ry
+            bx = dx / rx
+            by = dy / ry
+            A = bx * bx + by * by
+            B = 2 * (ax * bx + ay * by)
+            C = ax * ax + ay * ay - 1
+            discr = B * B - 4 * A * C
+            if discr <= 0:
+                continue  # line misses the body
+            sd = math.sqrt(discr)
+            s1 = (-B - sd) / (2 * A)
+            s2 = (-B + sd) / (2 * A)
+            x1 = ox + dx * s1
+            y1 = oy + dy * s1
+            x2 = ox + dx * s2
+            y2 = oy + dy * s2
+            out.append(
+                f'<line x1="{x1:.1f}" y1="{y1:.1f}" '
+                f'x2="{x2:.1f}" y2="{y2:.1f}" '
+                f'class="spiral-line spiral-{family}"/>'
+            )
+        return "\n          ".join(out)
+
+    fam8 = lines_at_slope(28, 8, "f8")
+    fam13 = lines_at_slope(55, 13, "f13")
+    fam21 = lines_at_slope(82, 21, "f21")
+    return (
+        '<g class="spiral-family-8" data-count="8">\n          '
+        + fam8 + '\n        </g>\n        '
+        '<g class="spiral-family-13" data-count="13">\n          '
+        + fam13 + '\n        </g>\n        '
+        '<g class="spiral-family-21" data-count="21">\n          '
+        + fam21 + '\n        </g>'
+    )
+
+
+# Original geometry — matches the generated SVG body silhouette.
+_SPIRAL_BODY_CX, _SPIRAL_BODY_CY = 320, 580
+_SPIRAL_BODY_RX, _SPIRAL_BODY_RY = 248, 298
+_PINEAPPLE_FIBONACCI_SPIRALS_HTML = _build_pineapple_fibonacci_spirals_html()
+
+# Photo geometry — fit to the cropped crystal pineapple sculpture
+# (taller, slightly narrower than the earlier warm-gold reference).
+# Photo is placed at x=40 y=80 w=560 h=800; within it the body
+# (no crown) sits roughly x≈170..505, y≈395..855, giving an
+# ellipse center (337, 625) with rx≈170 ry≈230.
+_SPIRAL_BODY_CX, _SPIRAL_BODY_CY = 337, 625
+_SPIRAL_BODY_RX, _SPIRAL_BODY_RY = 170, 225
+_PINEAPPLE_FIBONACCI_SPIRALS_PHOTO_HTML = _build_pineapple_fibonacci_spirals_html()
+
+
+def _build_pineapple_natural_skin_html() -> str:
+    """Build per-scale rects + per-scale eye dots for a realistic
+    pineapple skin (matte naturalistic palette, not glassy crystal).
+
+    Each scale gets a class `.natural-tN` (N=0..3) chosen by SCREEN-
+    SPACE distance from the upper-center light source — same lighting
+    logic as the dome skin, but the per-tier gradients are tuned to
+    natural pineapple colors (warm gold center → greenish-brown edge),
+    and a small dark eye dot is placed at every scale center to mimic
+    the dried bract you see on real fruit.
+    """
+    import math
+    cos45 = math.cos(math.radians(45))
+    sin45 = math.sin(math.radians(45))
+
+    light_cx, light_cy = 320, 380
+    inset = 2.0
+    half = _TILE / 2
+
+    # Subtler tier banding than the crystal version — real pineapples
+    # don't have dramatic light/shadow ranges across their skin.
+    t0_max = 200
+    t1_max = 310
+    t2_max = 410
+
+    scales = []
+    eyes = []
+    for col in range(-_GRID_N, _GRID_N + 1):
+        for row in range(-_GRID_N, _GRID_N + 1):
+            x = _GRID_CX + col * _TILE - half + inset
+            y = _GRID_CY + row * _TILE - half + inset
+            w = _TILE - 2 * inset
+
+            # Project to screen position so the lighting matches what
+            # you'll actually see after the parent's 45° rotation.
+            ox = col * _TILE
+            oy = row * _TILE
+            sx = _GRID_CX + ox * cos45 - oy * sin45
+            sy = _GRID_CY + ox * sin45 + oy * cos45
+            dist = math.hypot(sx - light_cx, sy - light_cy)
+            if dist < t0_max:
+                tier = 0
+            elif dist < t1_max:
+                tier = 1
+            elif dist < t2_max:
+                tier = 2
+            else:
+                tier = 3
+
+            scales.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" '
+                f'width="{w:.1f}" height="{w:.1f}" class="natural-t{tier}"/>'
+            )
+            # Eye dot at scale center (in the same pre-rotation coords
+            # so it rotates with the grid and stays centered visually).
+            eye_x = _GRID_CX + col * _TILE
+            eye_y = _GRID_CY + row * _TILE
+            eyes.append(
+                f'<circle cx="{eye_x:.1f}" cy="{eye_y:.1f}" '
+                f'r="2.4" class="scale-eye"/>'
+            )
+    return (
+        "\n        ".join(scales)
+        + "\n\n        <!-- Eye dots — one per scale, at each scale's center -->\n        "
+        + "\n        ".join(eyes)
+    )
+
+
+_PINEAPPLE_NATURAL_SKIN_HTML = _build_pineapple_natural_skin_html()
+
+
+def _build_pineapple_premium_skin_html() -> str:
+    """Build premium pineapple scales.
+
+    Each scale is a pillowed diamond (cubic-bezier sides, slightly
+    convex) placed on a brick-offset lattice in normalized (u, v)
+    body coordinates. The lattice is then cylindrically warped so
+    horizontal distances compress near the body edges (giving the
+    fruit a real 3D barrel feel) and tapered at top/bottom so
+    scales shrink near the poles. Each scale is assigned to one of
+    eight gradient variants with row-based biasing (greener/cream
+    near the top, warm honey in the middle, warm brown near the
+    bottom) and per-scale pseudo-randomness, so no two scales look
+    identical.
+
+    Returns a string of <path class="psc-pN"/> elements.
+    """
+    import math
+    import random
+
+    cx, cy = 320, 580
+    rx, ry = 244, 296
+
+    # Scale geometry (screen pixels at u = 0).
+    dia_w_max = 25.0
+    dia_h = 17.0
+
+    # Lattice spacing in normalized (u, v) coords. Tuned so the
+    # visible diagonal counts roughly approximate a real pineapple
+    # (Fibonacci 8 / 13 / 21).
+    u_step = 0.155
+    v_step = 0.082
+
+    # Cylindrical wrap intensity. 1.0 → hemisphere (full edge
+    # compression to zero); 0.94 keeps a bit of width at the edges
+    # so the silhouette stays photogenic.
+    wrap = 0.94
+    wrap_norm = math.sin(wrap * math.pi / 2)
+
+    rng = random.Random(48414)
+    scales: list[str] = []
+
+    # Walk enough rows / cols to cover the body in pre-warp space.
+    r_max = int(1.4 / v_step) + 1
+    c_max = int(1.4 / u_step) + 1
+
+    for r in range(-r_max, r_max + 1):
+        v_pre = r * v_step
+        if abs(v_pre) > 1.04:
+            continue
+        # Brick offset every other row → creates the diagonal
+        # Fibonacci-spiral visual alignment.
+        row_offset = (u_step * 0.5) if (r & 1) else 0.0
+        for c in range(-c_max, c_max + 1):
+            u_pre = c * u_step + row_offset
+            if abs(u_pre) > 1.04:
+                continue
+            # Skip outside the unit ellipse in pre-warp coords (with
+            # a tiny buffer so the clip-path handles the silhouette).
+            if u_pre * u_pre + v_pre * v_pre > 0.985:
+                continue
+
+            # Cylindrical horizontal warp.
+            sx = cx + math.sin(u_pre * wrap * math.pi / 2) / wrap_norm * rx
+            # Slight v warp: rows dip outward at the sides so the
+            # band visually curves around the body.
+            v_curve = v_pre * (1.0 + 0.05 * (u_pre * u_pre))
+            sy = cy + v_curve * ry
+
+            # Horizontal compression near body edges.
+            compress = math.cos(u_pre * wrap * math.pi / 2)
+            w = dia_w_max * compress
+            # Vertical taper near top/bottom poles.
+            pole_taper = max(0.62, 1.0 - abs(v_pre) * 0.42)
+            w *= pole_taper
+            h = dia_h * pole_taper
+
+            # Drop the smallest fringe scales for cleaner edges.
+            if w < 4.5:
+                continue
+
+            # Choose variant: row-based palette bias, then per-scale
+            # randomization within the allowed pool.
+            if v_pre < -0.45:
+                pool = ("p4", "p4", "p3", "p0", "p1", "p7")
+            elif v_pre > 0.45:
+                pool = ("p5", "p5", "p2", "p6", "p1", "p2")
+            else:
+                pool = ("p0", "p1", "p3", "p6", "p7", "p1", "p0", "p3")
+            variant = rng.choice(pool)
+
+            # Pillowed-diamond path (cubic bezier on each side,
+            # slightly convex toward the outside → soft, premium).
+            d = (
+                f"M {sx:.1f} {sy - h:.1f} "
+                f"C {sx + w * 0.50:.1f} {sy - h * 0.92:.1f}, "
+                f"{sx + w * 0.92:.1f} {sy - h * 0.50:.1f}, "
+                f"{sx + w:.1f} {sy:.1f} "
+                f"C {sx + w * 0.92:.1f} {sy + h * 0.50:.1f}, "
+                f"{sx + w * 0.50:.1f} {sy + h * 0.92:.1f}, "
+                f"{sx:.1f} {sy + h:.1f} "
+                f"C {sx - w * 0.50:.1f} {sy + h * 0.92:.1f}, "
+                f"{sx - w * 0.92:.1f} {sy + h * 0.50:.1f}, "
+                f"{sx - w:.1f} {sy:.1f} "
+                f"C {sx - w * 0.92:.1f} {sy - h * 0.50:.1f}, "
+                f"{sx - w * 0.50:.1f} {sy - h * 0.92:.1f}, "
+                f"{sx:.1f} {sy - h:.1f} Z"
+            )
+            scales.append(f'<path d="{d}" class="psc-{variant}"/>')
+
+    return "\n        ".join(scales)
+
+
+_PINEAPPLE_PREMIUM_SKIN_HTML = _build_pineapple_premium_skin_html()
+
+
+def _build_pineapple_glass_skin_html() -> str:
+    """Build translucent 3D-faceted GLASS scales.
+
+    Each scale renders as four layered SVG elements (drawn in
+    document order so light reads correctly):
+
+      1. Pillowed-diamond fill with a translucent amber gradient
+         (uses fill-opacity stops so the warm body backdrop is
+         visible through every facet → glass effect).
+      2. A subtle internal facet cross — four short lines from
+         the scale center to each vertex, stroked in pale gold.
+         This is the "cut gemstone" gimmick: it reads as the
+         interior planes of a faceted crystal.
+      3. A bright specular glint near the top-right peak of every
+         large-enough scale, sized proportionally to the scale.
+      4. (The pillowed-diamond border itself is handled via the
+         shared `.gsc-g*` stroke rule in CSS — warm bright gold
+         instead of dark grout, since the seams are RAISED edges
+         catching light, not sunken grooves.)
+
+    Layout, warp, and per-scale color biasing match the premium
+    skin helper so the silhouette stays identical — only the
+    surface material changes.
+    """
+    import math
+    import random
+
+    cx, cy = 320, 580
+    rx, ry = 244, 296
+
+    dia_w_max = 25.0
+    dia_h = 17.0
+    u_step = 0.155
+    v_step = 0.082
+
+    wrap = 0.94
+    wrap_norm = math.sin(wrap * math.pi / 2)
+
+    rng = random.Random(48414)
+    pieces: list[str] = []
+
+    r_max = int(1.4 / v_step) + 1
+    c_max = int(1.4 / u_step) + 1
+
+    for r in range(-r_max, r_max + 1):
+        v_pre = r * v_step
+        if abs(v_pre) > 1.04:
+            continue
+        row_offset = (u_step * 0.5) if (r & 1) else 0.0
+        for c in range(-c_max, c_max + 1):
+            u_pre = c * u_step + row_offset
+            if abs(u_pre) > 1.04:
+                continue
+            if u_pre * u_pre + v_pre * v_pre > 0.985:
+                continue
+
+            sx = cx + math.sin(u_pre * wrap * math.pi / 2) / wrap_norm * rx
+            v_curve = v_pre * (1.0 + 0.05 * (u_pre * u_pre))
+            sy = cy + v_curve * ry
+
+            compress = math.cos(u_pre * wrap * math.pi / 2)
+            w = dia_w_max * compress
+            pole_taper = max(0.62, 1.0 - abs(v_pre) * 0.42)
+            w *= pole_taper
+            h = dia_h * pole_taper
+            if w < 4.5:
+                continue
+
+            # Glass palette: cooler/clearer at top, deep amber at
+            # bottom, all amber-gold in the middle.
+            if v_pre < -0.45:
+                pool = ("g0", "g0", "g3", "g7", "g1")
+            elif v_pre > 0.45:
+                pool = ("g5", "g5", "g2", "g6", "g2")
+            else:
+                pool = ("g0", "g1", "g3", "g6", "g7", "g1", "g0", "g3")
+            variant = rng.choice(pool)
+
+            d = (
+                f"M {sx:.1f} {sy - h:.1f} "
+                f"C {sx + w * 0.50:.1f} {sy - h * 0.92:.1f}, "
+                f"{sx + w * 0.92:.1f} {sy - h * 0.50:.1f}, "
+                f"{sx + w:.1f} {sy:.1f} "
+                f"C {sx + w * 0.92:.1f} {sy + h * 0.50:.1f}, "
+                f"{sx + w * 0.50:.1f} {sy + h * 0.92:.1f}, "
+                f"{sx:.1f} {sy + h:.1f} "
+                f"C {sx - w * 0.50:.1f} {sy + h * 0.92:.1f}, "
+                f"{sx - w * 0.92:.1f} {sy + h * 0.50:.1f}, "
+                f"{sx - w:.1f} {sy:.1f} "
+                f"C {sx - w * 0.92:.1f} {sy - h * 0.50:.1f}, "
+                f"{sx - w * 0.50:.1f} {sy - h * 0.92:.1f}, "
+                f"{sx:.1f} {sy - h:.1f} Z"
+            )
+            pieces.append(f'<path d="{d}" class="gsc-{variant}"/>')
+
+            # Interior facet cross — 4 lines from center → vertex.
+            # Reads as the internal planes of a cut gemstone.
+            pieces.append(
+                f'<line class="gsc-facet" x1="{sx:.1f}" y1="{sy:.1f}" '
+                f'x2="{sx:.1f}" y2="{sy - h:.1f}"/>'
+            )
+            pieces.append(
+                f'<line class="gsc-facet" x1="{sx:.1f}" y1="{sy:.1f}" '
+                f'x2="{sx + w:.1f}" y2="{sy:.1f}"/>'
+            )
+            pieces.append(
+                f'<line class="gsc-facet" x1="{sx:.1f}" y1="{sy:.1f}" '
+                f'x2="{sx:.1f}" y2="{sy + h:.1f}"/>'
+            )
+            pieces.append(
+                f'<line class="gsc-facet" x1="{sx:.1f}" y1="{sy:.1f}" '
+                f'x2="{sx - w:.1f}" y2="{sy:.1f}"/>'
+            )
+
+            # Specular highlight — small white ellipse near the
+            # upper-right vertex. Skip the tiniest scales so the
+            # body doesn't end up over-speckled.
+            if w > 8.0:
+                glint_x = sx + w * 0.30
+                glint_y = sy - h * 0.55
+                glint_r = max(1.2, w * 0.11)
+                pieces.append(
+                    f'<ellipse class="gsc-glint" '
+                    f'cx="{glint_x:.1f}" cy="{glint_y:.1f}" '
+                    f'rx="{glint_r:.2f}" ry="{glint_r * 0.65:.2f}"/>'
+                )
+
+    return "\n        ".join(pieces)
+
+
+_PINEAPPLE_GLASS_SKIN_HTML = _build_pineapple_glass_skin_html()
+
+
+def _build_pineapple_glass_v2_skin_html() -> str:
+    """Build photo-grade 3D-faceted glass scales.
+
+    Each scale is constructed as FOUR triangular facets meeting at
+    the scale center (true cut-gemstone topology), plus a thin
+    bright-gold perimeter outline and a small white specular glint
+    at the upper vertex.
+
+    Light direction is fixed to upper-left, so the four facets get
+    four different brightness classes (gv-ul brightest, gv-lr in
+    deepest shadow). Per-scale variation comes from a brightness
+    tier (gv-t0/t1/t2) chosen by deterministic random so no two
+    scales look identical, exactly like a real crystal sculpture.
+
+    Reuses the premium-variant warp / lattice / silhouette math so
+    the underlying body shape stays consistent.
+    """
+    import math
+    import random
+
+    cx, cy = 320, 580
+    rx, ry = 244, 296
+
+    dia_w_max = 25.0
+    dia_h = 17.0
+    u_step = 0.155
+    v_step = 0.082
+
+    wrap = 0.94
+    wrap_norm = math.sin(wrap * math.pi / 2)
+
+    rng = random.Random(48414)
+    pieces: list[str] = []
+
+    r_max = int(1.4 / v_step) + 1
+    c_max = int(1.4 / u_step) + 1
+
+    for r in range(-r_max, r_max + 1):
+        v_pre = r * v_step
+        if abs(v_pre) > 1.04:
+            continue
+        row_offset = (u_step * 0.5) if (r & 1) else 0.0
+        for c in range(-c_max, c_max + 1):
+            u_pre = c * u_step + row_offset
+            if abs(u_pre) > 1.04:
+                continue
+            if u_pre * u_pre + v_pre * v_pre > 0.985:
+                continue
+
+            sx = cx + math.sin(u_pre * wrap * math.pi / 2) / wrap_norm * rx
+            v_curve = v_pre * (1.0 + 0.05 * (u_pre * u_pre))
+            sy = cy + v_curve * ry
+
+            compress = math.cos(u_pre * wrap * math.pi / 2)
+            w = dia_w_max * compress
+            pole_taper = max(0.62, 1.0 - abs(v_pre) * 0.42)
+            w *= pole_taper
+            h = dia_h * pole_taper
+            if w < 4.5:
+                continue
+
+            # Per-scale brightness tier (mostly normal, a few dim).
+            tier = rng.choice(("t0", "t0", "t0", "t0", "t1", "t1", "t2"))
+
+            # Diamond vertices.
+            tx, ty = sx, sy - h
+            rxv, ryv = sx + w, sy
+            bx, by = sx, sy + h
+            lxv, lyv = sx - w, sy
+
+            # 4 facet triangles, each meeting at scale center.
+            # UL — center → left → top
+            pieces.append(
+                f'<path class="gv-ul gv-{tier}" '
+                f'd="M {sx:.1f} {sy:.1f} L {lxv:.1f} {lyv:.1f} '
+                f'L {tx:.1f} {ty:.1f} Z"/>'
+            )
+            # UR — center → top → right
+            pieces.append(
+                f'<path class="gv-ur gv-{tier}" '
+                f'd="M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f} '
+                f'L {rxv:.1f} {ryv:.1f} Z"/>'
+            )
+            # LL — center → bottom → left
+            pieces.append(
+                f'<path class="gv-ll gv-{tier}" '
+                f'd="M {sx:.1f} {sy:.1f} L {bx:.1f} {by:.1f} '
+                f'L {lxv:.1f} {lyv:.1f} Z"/>'
+            )
+            # LR — center → right → bottom
+            pieces.append(
+                f'<path class="gv-lr gv-{tier}" '
+                f'd="M {sx:.1f} {sy:.1f} L {rxv:.1f} {ryv:.1f} '
+                f'L {bx:.1f} {by:.1f} Z"/>'
+            )
+            # Bright perimeter outline (the raised gold ridges).
+            pieces.append(
+                f'<path class="gv-edge" '
+                f'd="M {tx:.1f} {ty:.1f} L {rxv:.1f} {ryv:.1f} '
+                f'L {bx:.1f} {by:.1f} L {lxv:.1f} {lyv:.1f} Z"/>'
+            )
+            # Specular glint at the top peak.
+            if w > 7.5:
+                glint_r = max(1.2, w * 0.13)
+                pieces.append(
+                    f'<ellipse class="gv-glint" '
+                    f'cx="{tx:.1f}" cy="{ty + glint_r * 0.4:.1f}" '
+                    f'rx="{glint_r:.2f}" ry="{glint_r * 0.55:.2f}"/>'
+                )
+
+    return "\n        ".join(pieces)
+
+
+_PINEAPPLE_GLASS_V2_SKIN_HTML = _build_pineapple_glass_v2_skin_html()
+
+
+# ── Hero illustration: pineapple in SVG ────────────────────────────────
+# Crown leaves attach to a single point at (320, 360) on the body's
+# upper rim. The body skin is a 45° interlocking diamond grid whose
+# scales are individually colored on two alternating diagonals (yellow
+# 8-spiral, green 13-spiral), with near-black seam grooves and a slow
+# two-beat pulse that syncs yellow → green like a heartbeat.
+
+# Legacy diamond-grid pineapple: flat golden body, brown 45° grid,
+# orange center dots, dark green crown. Parked as inert reference so
+# we can flip back to it later by re-assigning HERO_PINEAPPLE_SVG.
+_HERO_PINEAPPLE_SVG_DIAMOND_GRID = """\
 <svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <!-- 3D body: warm sunlit top → deep amber underbelly -->
-    <radialGradient id="body3d" cx="38%" cy="32%" r="78%">
-      <stop offset="0%"   stop-color="#FFF6B8"/>
-      <stop offset="22%"  stop-color="#FFE066"/>
-      <stop offset="55%"  stop-color="#F4A300"/>
-      <stop offset="85%"  stop-color="#B07415"/>
-      <stop offset="100%" stop-color="#6B4408"/>
-    </radialGradient>
-    <linearGradient id="body-rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#FFF3B0" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#FFF3B0" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="body-spec" cx="28%" cy="22%" r="34%">
-      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.95"/>
-      <stop offset="55%"  stop-color="#FFFFFF" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="body-shadow" cx="72%" cy="78%" r="70%">
-      <stop offset="0%"   stop-color="#3B2A0A" stop-opacity="0"/>
-      <stop offset="60%"  stop-color="#3B2A0A" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#3B2A0A" stop-opacity="0.55"/>
+    <!-- Bright golden body — flat-feeling yellow with a subtle warm
+         shift toward amber at the edges. -->
+    <radialGradient id="body-yellow" cx="42%" cy="32%" r="78%">
+      <stop offset="0%"   stop-color="#FFE974"/>
+      <stop offset="35%"  stop-color="#FFD700"/>
+      <stop offset="80%"  stop-color="#F2C200"/>
+      <stop offset="100%" stop-color="#E2A800"/>
     </radialGradient>
 
-    <!-- Diamond-lattice skin scales with subtle bevel -->
-    <pattern id="skin" x="0" y="0" width="78" height="78" patternUnits="userSpaceOnUse" patternTransform="rotate(2)">
-      <path d="M 39 1 L 77 39 L 39 77 L 1 39 Z"
-            fill="none" stroke="#7A4F1A" stroke-width="2.6" stroke-linejoin="round" opacity="0.85"/>
-      <path d="M 39 1 L 77 39 L 39 77 L 1 39 Z"
-            fill="none" stroke="#FFE9A0" stroke-width="0.9" stroke-linejoin="round" opacity="0.65"
-            transform="translate(0 -1.2)"/>
-      <circle cx="39" cy="39" r="3.4" fill="#C9820A"/>
-      <circle cx="39" cy="39" r="1.4" fill="#FFE066"/>
-      <circle cx="0"  cy="39" r="2.4" fill="#9C6510" opacity="0.85"/>
-      <circle cx="78" cy="39" r="2.4" fill="#9C6510" opacity="0.85"/>
-      <circle cx="39" cy="0"  r="2.4" fill="#9C6510" opacity="0.85"/>
-      <circle cx="39" cy="78" r="2.4" fill="#9C6510" opacity="0.85"/>
+    <!-- Specular sheen: tight bright spot upper-left for surface gloss -->
+    <radialGradient id="body-sheen" cx="32%" cy="26%" r="22%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Crown blade gradients: dark green silhouette + brighter accent -->
+    <linearGradient id="crown-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#3F7A3F"/>
+      <stop offset="55%"  stop-color="#2D4A2D"/>
+      <stop offset="100%" stop-color="#1F3A1F"/>
+    </linearGradient>
+    <linearGradient id="crown-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#7BD17B"/>
+      <stop offset="55%"  stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#2D6B2D"/>
+    </linearGradient>
+
+    <!-- Thin amber 45° diamond grid — the "engraved" pineapple skin.
+         Each tile is a 36×36 square rotated 45° via patternTransform,
+         giving a uniform interlocking diamond crosshatch. A small
+         orange eye dot sits in each scale center. -->
+    <pattern id="diamond-skin" x="0" y="0" width="36" height="36"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect x="0" y="0" width="36" height="36" fill="none"
+            stroke="#7A5008" stroke-opacity="0.55" stroke-width="0.9"/>
+      <!-- Soft top-left highlight stroke for subtle bevel -->
+      <path d="M 0 36 L 0 0 L 36 0" fill="none"
+            stroke="#FFFAE0" stroke-opacity="0.35" stroke-width="0.6"/>
+      <!-- Centered orange eye dot -->
+      <circle cx="18" cy="18" r="1.6" fill="#E08A0A" fill-opacity="0.85"/>
     </pattern>
 
-    <!-- Crown leaf gradients: back (deep) → mid → front (lit) -->
-    <linearGradient id="leaf-back" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%"   stop-color="#1B5E20"/>
-      <stop offset="55%"  stop-color="#0F3B14"/>
-      <stop offset="100%" stop-color="#062309"/>
+    <!-- Heavy amber outer glow halo -->
+    <filter id="amber-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="34"/>
+    </filter>
+
+    <!-- Pineapple silhouette + clip path used for the skin grid. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== AMBER OUTER GLOW (warm halo bleeding outward) ===== -->
+  <g filter="url(#amber-glow)" opacity="0.7">
+    <ellipse cx="320" cy="580" rx="280" ry="320" fill="#FFC107" opacity="0.45"/>
+    <ellipse cx="320" cy="580" rx="180" ry="220" fill="#FFE066" opacity="0.45"/>
+  </g>
+
+  <!-- ===== CROWN — dark green spiky blades, fanned in a wide arc =====
+       Drawn behind the body so the blade bases tuck under the rim. -->
+  <g class="hero-crown">
+    <!-- Layer 1: deep dark-green back blades (widest fan) -->
+    <g stroke="#1F3A1F" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#crown-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#crown-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#crown-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#crown-deep)" opacity="0.88"/>
+    </g>
+
+    <!-- Layer 2: medium green inner blades (4) -->
+    <g stroke="#2D6B2D" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 314 360 L 250 16 L 280 56 L 317 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 326 360 L 390 16 L 360 56 L 323 360 Z" fill="url(#crown-deep)"/>
+    </g>
+
+    <!-- Layer 3: two bright accent blades up center for the highlight -->
+    <g stroke="#1F3A1F" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#crown-bright)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#crown-bright)"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Body fill: pineapple silhouette + bright golden gradient -->
+  <use href="#body-path" fill="url(#body-yellow)"
+       stroke="#7A5008" stroke-width="2.5" stroke-opacity="0.7"/>
+
+  <!-- 45° interlocking diamond skin pattern (clipped to body) -->
+  <g clip-path="url(#body-clip)">
+    <rect x="40" y="270" width="560" height="650" fill="url(#diamond-skin)"/>
+  </g>
+
+  <!-- Specular sheen (upper-left) for glossy surface highlight -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="240" cy="430" rx="160" ry="200" fill="url(#body-sheen)"/>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#7A5008" stroke-width="2.4" stroke-opacity="0.55"/>
+</svg>
+"""
+
+
+# Legacy template kept for the previous spiral-pulse pineapple. Unused
+# while the design is reverted to the diamond-grid version above; kept
+# in the module so we can switch back without re-typing the SVG.
+_HERO_PINEAPPLE_SVG_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── Organic pineapple palette (sampled-from-photo) ───────────────
+       Each scale is a 36×36 rect inside a parent <g> rotated 45°.
+         • 8-spiral (col+row even)  → mustard center #C8A020 fading to
+           yellow-green spike-tip #8BAA1A at the edges.
+         • 13-spiral (col+row odd) → deep forest green #2D4A15.
+         • Seam grooves stroked in the same forest green so the green
+           spiral visually merges with the grooves (the "unifying
+           thread" the brief asks for).
+         • Tiny near-black-green dots (.scale-pocket) sit at every
+           grid corner — the shadow pockets where four scales meet.
+
+       The pulse is intentionally subtle here — no harsh neon, no
+       color flash. We animate transform + brightness only, so the
+       gradient fills stay intact and the fruit just *breathes*.
+       Yellow breath leads at 14%; green breath answers at 54%. */
+    .hero-pineapple .scale-yellow,
+    .hero-pineapple .scale-green {
+      stroke: #2D4A15;
+      stroke-width: 1;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .hero-pineapple .scale-yellow {
+      fill: url(#scale-fill-yellow);
+      animation: pineappleHeartbeatYellow 3.4s ease-in-out infinite;
+    }
+    .hero-pineapple .scale-green {
+      fill: url(#scale-fill-green);
+      animation: pineappleHeartbeatGreen 3.4s ease-in-out infinite;
+    }
+    .hero-pineapple .scale-pocket {
+      fill: #1A2D0A;
+      pointer-events: none;
+    }
+    @keyframes pineappleHeartbeatYellow {
+      0%, 100% { transform: scale(1);    filter: brightness(1); }
+      14%      { transform: scale(1.04); filter: brightness(1.12); }
+      28%      { transform: scale(1);    filter: brightness(1); }
+    }
+    @keyframes pineappleHeartbeatGreen {
+      0%, 100% { transform: scale(1);    filter: brightness(1); }
+      54%      { transform: scale(1.04); filter: brightness(1.18); }
+      68%      { transform: scale(1);    filter: brightness(1); }
+    }
+    /* Hover deepens the breath slightly (still organic, no neon). */
+    .hero-pineapple:hover .scale-yellow {
+      animation: pineappleHeartbeatYellowHover 2.6s ease-in-out infinite;
+    }
+    .hero-pineapple:hover .scale-green {
+      animation: pineappleHeartbeatGreenHover 2.6s ease-in-out infinite;
+    }
+    @keyframes pineappleHeartbeatYellowHover {
+      0%, 100% { transform: scale(1);    filter: brightness(1); }
+      14%      { transform: scale(1.06); filter: brightness(1.22); }
+      30%      { transform: scale(1);    filter: brightness(1); }
+    }
+    @keyframes pineappleHeartbeatGreenHover {
+      0%, 100% { transform: scale(1);    filter: brightness(1); }
+      54%      { transform: scale(1.06); filter: brightness(1.30); }
+      70%      { transform: scale(1);    filter: brightness(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .scale-yellow,
+      .hero-pineapple .scale-green { animation: none; }
+    }
+  </style>
+  <defs>
+    <!-- Per-scale radial gradients. Default gradientUnits is
+         objectBoundingBox, so each <rect> gets its own copy mapped to
+         its own bounding box — every diamond fades from a mustard
+         (or forest) center out to a yellow-green (or near-black-green)
+         tip. This is what gives the scales their organic, photographic
+         feel instead of a flat color block. -->
+    <radialGradient id="scale-fill-yellow" cx="50%" cy="50%" r="62%">
+      <stop offset="0%"   stop-color="#D3AB28"/>  <!-- lifted center -->
+      <stop offset="45%"  stop-color="#C8A020"/>  <!-- mustard core   -->
+      <stop offset="80%"  stop-color="#A89018"/>  <!-- mid transition -->
+      <stop offset="100%" stop-color="#8BAA1A"/>  <!-- yellow-green tips -->
+    </radialGradient>
+    <radialGradient id="scale-fill-green" cx="50%" cy="50%" r="62%">
+      <stop offset="0%"   stop-color="#3F6320"/>  <!-- lit forest center -->
+      <stop offset="55%"  stop-color="#345218"/>
+      <stop offset="100%" stop-color="#2D4A15"/>  <!-- deep forest edges -->
+    </radialGradient>
+
+    <!-- Body underglow kept beneath the scales as a warm fallback in
+         case any micro-gaps show through. -->
+    <radialGradient id="body-lit" cx="50%" cy="22%" r="78%">
+      <stop offset="0%"   stop-color="#FFFAE0"/>
+      <stop offset="20%"  stop-color="#FFE9A0"/>
+      <stop offset="45%"  stop-color="#FFE066"/>
+      <stop offset="70%"  stop-color="#F5C518"/>
+      <stop offset="100%" stop-color="#7A5008"/>
+    </radialGradient>
+
+    <!-- Crown frond / blade gradients (line-art monochrome gold). -->
+    <linearGradient id="frond-gold" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFE9A0"/>
+      <stop offset="60%"  stop-color="#F5C518"/>
+      <stop offset="100%" stop-color="#8A6510"/>
     </linearGradient>
-    <linearGradient id="leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%"   stop-color="#66BB6A"/>
-      <stop offset="55%"  stop-color="#2E7D32"/>
-      <stop offset="100%" stop-color="#143E18"/>
+    <linearGradient id="blade-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFD56B"/>
+      <stop offset="55%"  stop-color="#C28C12"/>
+      <stop offset="100%" stop-color="#6B4408"/>
     </linearGradient>
-    <linearGradient id="leaf-front" x1="0.4" y1="0" x2="0.6" y2="1">
-      <stop offset="0%"   stop-color="#D7F3D8"/>
-      <stop offset="35%"  stop-color="#7FCB82"/>
-      <stop offset="70%"  stop-color="#3E9243"/>
-      <stop offset="100%" stop-color="#1B5E20"/>
+    <linearGradient id="blade-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFE9A0"/>
+      <stop offset="55%"  stop-color="#F5C518"/>
+      <stop offset="100%" stop-color="#8A6510"/>
     </linearGradient>
-    <linearGradient id="leaf-spec" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    <linearGradient id="blade-light" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFAE0"/>
+      <stop offset="50%"  stop-color="#FFE066"/>
+      <stop offset="100%" stop-color="#C28C12"/>
     </linearGradient>
 
-    <filter id="drop" x="-15%" y="-10%" width="130%" height="130%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="9"/>
-      <feOffset dx="0" dy="16" result="o"/>
-      <feColorMatrix in="o" type="matrix"
-        values="0 0 0 0 0.42  0 0 0 0 0.27  0 0 0 0 0.06  0 0 0 0.55 0"/>
-      <feBlend in="SourceGraphic" in2="o" mode="normal"/>
+    <!-- Heavy amber outer glow halo. -->
+    <filter id="amber-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="34"/>
+    </filter>
+
+    <!-- True pineapple silhouette + clip for the scale grid. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== AMBER OUTER GLOW ===== -->
+  <g filter="url(#amber-glow)" opacity="0.85">
+    <ellipse cx="320" cy="580" rx="310" ry="350" fill="#FFA500" opacity="0.55"/>
+    <ellipse cx="320" cy="580" rx="230" ry="270" fill="#FFC107" opacity="0.7"/>
+    <ellipse cx="320" cy="580" rx="150" ry="180" fill="#FFE066" opacity="0.55"/>
+  </g>
+
+  <!-- ===== CROWN (line-art monochrome gold, layered) ===== -->
+  <g class="hero-crown">
+    <g stroke="url(#frond-gold)" stroke-width="1.2" opacity="0.88"
+       stroke-linecap="round">
+      <line x1="320" y1="360" x2="125" y2="343"/>
+      <line x1="320" y1="360" x2="108" y2="315"/>
+      <line x1="320" y1="360" x2="92"  y2="277"/>
+      <line x1="320" y1="360" x2="86"  y2="236"/>
+      <line x1="320" y1="360" x2="88"  y2="198"/>
+      <line x1="320" y1="360" x2="98"  y2="153"/>
+      <line x1="320" y1="360" x2="116" y2="116"/>
+      <line x1="320" y1="360" x2="144" y2="78"/>
+      <line x1="320" y1="360" x2="175" y2="49"/>
+      <line x1="320" y1="360" x2="212" y2="26"/>
+      <line x1="320" y1="360" x2="246" y2="12"/>
+      <line x1="320" y1="360" x2="283" y2="3"/>
+      <line x1="320" y1="360" x2="357" y2="3"/>
+      <line x1="320" y1="360" x2="394" y2="12"/>
+      <line x1="320" y1="360" x2="428" y2="26"/>
+      <line x1="320" y1="360" x2="465" y2="49"/>
+      <line x1="320" y1="360" x2="496" y2="78"/>
+      <line x1="320" y1="360" x2="524" y2="116"/>
+      <line x1="320" y1="360" x2="542" y2="153"/>
+      <line x1="320" y1="360" x2="552" y2="198"/>
+      <line x1="320" y1="360" x2="554" y2="236"/>
+      <line x1="320" y1="360" x2="548" y2="277"/>
+      <line x1="320" y1="360" x2="532" y2="315"/>
+      <line x1="320" y1="360" x2="515" y2="343"/>
+    </g>
+    <g stroke="#6B4408" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 114 175 L 314 360 Z" fill="url(#blade-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 526 175 L 326 360 Z" fill="url(#blade-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 168 95 L 313 360 Z" fill="url(#blade-deep)"/>
+      <path d="M 335 360 L 495 65 L 472 95 L 327 360 Z" fill="url(#blade-deep)"/>
+      <path d="M 308 360 L 215 25 L 240 55 L 312 360 Z" fill="url(#blade-deep)"/>
+      <path d="M 332 360 L 425 25 L 400 55 L 328 360 Z" fill="url(#blade-deep)"/>
+      <path d="M 311 360 L 92 240 L 108 268 L 318 360 Z" fill="url(#blade-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 532 268 L 322 360 Z" fill="url(#blade-deep)" opacity="0.88"/>
+    </g>
+    <g stroke="#8A6510" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#blade-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#blade-mid)"/>
+      <path d="M 314 360 L 250 16 L 280 56 L 317 360 Z" fill="url(#blade-mid)"/>
+      <path d="M 326 360 L 390 16 L 360 56 L 323 360 Z" fill="url(#blade-mid)"/>
+    </g>
+    <g stroke="#A57414" stroke-width="0.8" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#blade-light)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#blade-light)"/>
+    </g>
+    <g stroke="#FFFAE0" stroke-width="1.2" fill="none" opacity="0.72"
+       stroke-linecap="round">
+      <path d="M 320 350 L 320 8"/>
+      <path d="M 312 348 L 282 38"/>
+      <path d="M 328 348 L 358 38"/>
+      <path d="M 305 348 L 240 60"/>
+      <path d="M 335 348 L 400 60"/>
+      <path d="M 296 350 L 175 100"/>
+      <path d="M 344 350 L 465 100"/>
+    </g>
+    <g stroke="#FFE066" stroke-width="0.7" fill="none" opacity="0.55"
+       stroke-linecap="round">
+      <path d="M 286 352 L 130 180"/>
+      <path d="M 354 352 L 510 180"/>
+      <path d="M 276 354 L 100 260"/>
+      <path d="M 364 354 L 540 260"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Underglow body fill — mostly hidden by the scale grid, but acts
+       as a warm fallback under the seam grooves. -->
+  <use href="#body-path" fill="url(#body-lit)"
+       stroke="#7A5008" stroke-width="2.5" stroke-opacity="0.55"/>
+
+  <!-- 45° interlocking diamond grid: every scale is its own <rect>
+       so it can carry a per-spiral fill class and pulse independently.
+       The whole grid is rotated 45° around the body center, then
+       clipped to the body silhouette. The pocket-dot layer sits on
+       top so the shadow points read at every X-junction. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-skin-grid" transform="rotate(45 320 585)">
+        {SCALES}
+    </g>
+    <g class="pineapple-skin-pockets" transform="rotate(45 320 585)">
+        {POCKETS}
+    </g>
+  </g>
+
+  <!-- Crisp body outline drawn last so the rim stays clean. -->
+  <use href="#body-path" fill="none"
+       stroke="#7A5008" stroke-width="2.8" stroke-opacity="0.45"/>
+</svg>
+"""
+
+# ── Crystal / glass pineapple (current active design) ─────────────────
+# Translucent golden body with sharply faceted diamond scales (each cell
+# carries a bright top-left highlight + dark bottom-right shadow + a
+# tiny specular sparkle), and an emerald-crystal crown made of multiple
+# layered blades with white edge-light to read as cut glass. Inspired
+# by a crystal sculpture reference.
+_HERO_PINEAPPLE_SVG_CRYSTAL = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Translucent glass body: bright cream-amber center fading to
+         deep amber at the rim. The central brightness mimics how
+         backlight passes through a glass pineapple. -->
+    <radialGradient id="glass-body" cx="50%" cy="40%" r="68%">
+      <stop offset="0%"   stop-color="#FFF1A8"/>
+      <stop offset="25%"  stop-color="#FFD54F"/>
+      <stop offset="55%"  stop-color="#F2B602"/>
+      <stop offset="85%"  stop-color="#A8770A"/>
+      <stop offset="100%" stop-color="#5A3F08"/>
+    </radialGradient>
+
+    <!-- Vertical bright "edge-light" stripe down the body center —
+         the signature refraction line on glass. -->
+    <linearGradient id="glass-center-flare" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0"/>
+      <stop offset="48%"  stop-color="#FFFAE0" stop-opacity="0.45"/>
+      <stop offset="52%"  stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="56%"  stop-color="#FFFAE0" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#FFFAE0" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Inner rim shadow: darkens the glass at the silhouette edges
+         so the body reads as round and glassy, not flat. -->
+    <radialGradient id="glass-rim-shadow" cx="50%" cy="50%" r="60%">
+      <stop offset="68%"  stop-color="#3D2400" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2A1A00" stop-opacity="0.65"/>
+    </radialGradient>
+
+    <!-- Per-facet bevel: bright top-left → dark bottom-right.
+         Drives the 3D faceted look of every diamond scale. -->
+    <linearGradient id="facet-bevel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.55"/>
+      <stop offset="48%"  stop-color="#FFE066" stop-opacity="0.05"/>
+      <stop offset="52%"  stop-color="#5C3A1A" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#3D2400" stop-opacity="0.55"/>
+    </linearGradient>
+
+    <!-- Crystal scale pattern — square 36×36 tile rotated 45°.
+         Each cell layers: a bevel-gradient base, a bright top-left
+         specular stroke, a dark bottom-right shadow stroke, a faint
+         outline, and a tiny white "twinkle" near the upper-left
+         corner that catches the eye and reads as cut-glass sparkle. -->
+    <pattern id="crystal-skin" x="0" y="0" width="36" height="36"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect x="0" y="0" width="36" height="36" fill="url(#facet-bevel)"/>
+      <!-- Bright specular edge (top + left of each diamond) -->
+      <path d="M 0 36 L 0 0 L 36 0" fill="none"
+            stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="0.95"/>
+      <!-- Inner cream highlight (lifts the bevel) -->
+      <path d="M 3 33 L 3 3 L 33 3" fill="none"
+            stroke="#FFFAE0" stroke-opacity="0.45" stroke-width="0.6"/>
+      <!-- Dark shadow edge (bottom + right) -->
+      <path d="M 36 0 L 36 36 L 0 36" fill="none"
+            stroke="#2A1A00" stroke-opacity="0.75" stroke-width="0.95"/>
+      <!-- Inner shadow under the bevel -->
+      <path d="M 33 3 L 33 33 L 3 33" fill="none"
+            stroke="#5C3A1A" stroke-opacity="0.35" stroke-width="0.6"/>
+      <!-- Cell outline -->
+      <rect x="0" y="0" width="36" height="36" fill="none"
+            stroke="#7A5008" stroke-opacity="0.45" stroke-width="0.6"/>
+      <!-- Tiny white sparkle (cut-glass twinkle) -->
+      <circle cx="9" cy="9" r="1.5" fill="#FFFFFF" fill-opacity="0.85"/>
+      <!-- Inner amber dot (refraction core of the facet) -->
+      <circle cx="20" cy="20" r="1.2" fill="#FFE066" fill-opacity="0.55"/>
+    </pattern>
+
+    <!-- Emerald crystal blade gradients — bright cream-green tip
+         fading to deep forest base. The white-cream highlight at
+         the very top sells the cut-glass quality. -->
+    <linearGradient id="crystal-blade" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="8%"   stop-color="#E8F8E9"/>
+      <stop offset="22%"  stop-color="#76C57A"/>
+      <stop offset="55%"  stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#0F3018"/>
+    </linearGradient>
+    <linearGradient id="crystal-blade-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#C8EBC9"/>
+      <stop offset="25%"  stop-color="#43A047"/>
+      <stop offset="65%"  stop-color="#1B5E20"/>
+      <stop offset="100%" stop-color="#0A2810"/>
+    </linearGradient>
+    <linearGradient id="crystal-blade-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#88C58C"/>
+      <stop offset="40%"  stop-color="#1B5E20"/>
+      <stop offset="100%" stop-color="#072008"/>
+    </linearGradient>
+
+    <!-- Soft amber outer halo to suggest the bright window backlight. -->
+    <filter id="amber-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="32"/>
+    </filter>
+
+    <!-- Pineapple silhouette + clip path. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== AMBER OUTER GLOW (warm window backlight) ===== -->
+  <g filter="url(#amber-glow)" opacity="0.65">
+    <ellipse cx="320" cy="580" rx="290" ry="330" fill="#FFC107" opacity="0.45"/>
+    <ellipse cx="320" cy="580" rx="180" ry="220" fill="#FFE066" opacity="0.45"/>
+  </g>
+
+  <!-- ===== CROWN — emerald crystal blades, layered for depth =====
+       Drawn behind the body so blade bases tuck under the rim. Each
+       blade carries a bright cream tip → forest base gradient that
+       reads as cut glass. -->
+  <g class="hero-crown">
+    <!-- Layer 1: deepest back blades (widest fan) -->
+    <g stroke="#072008" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#crystal-blade-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#crystal-blade-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#crystal-blade-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#crystal-blade-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#crystal-blade-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#crystal-blade-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#crystal-blade-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#crystal-blade-deep)" opacity="0.88"/>
+    </g>
+
+    <!-- Layer 2: mid-depth blades -->
+    <g stroke="#0A2810" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 304 360 L 168 90 L 190 130 L 316 360 Z" fill="url(#crystal-blade-mid)"/>
+      <path d="M 336 360 L 472 90 L 450 130 L 324 360 Z" fill="url(#crystal-blade-mid)"/>
+      <path d="M 309 360 L 240 30 L 268 70 L 314 360 Z" fill="url(#crystal-blade-mid)"/>
+      <path d="M 331 360 L 400 30 L 372 70 L 326 360 Z" fill="url(#crystal-blade-mid)"/>
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#crystal-blade-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#crystal-blade-mid)"/>
+    </g>
+
+    <!-- Layer 3: foreground bright blades — the cut-glass highlight set -->
+    <g stroke="#0F3018" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#crystal-blade)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#crystal-blade)"/>
+      <path d="M 308 360 L 284 18 L 308 60 L 318 360 Z" fill="url(#crystal-blade)" opacity="0.95"/>
+      <path d="M 332 360 L 356 18 L 332 60 L 322 360 Z" fill="url(#crystal-blade)" opacity="0.95"/>
+    </g>
+
+    <!-- White edge-light highlights on the front blades (cut-glass tip glints) -->
+    <g stroke="#FFFFFF" stroke-width="1.1" fill="none" opacity="0.78"
+       stroke-linecap="round">
+      <path d="M 320 8 L 320 200"/>
+      <path d="M 312 14 L 296 200"/>
+      <path d="M 328 14 L 344 200"/>
+      <path d="M 300 28 L 270 220"/>
+      <path d="M 340 28 L 370 220"/>
+    </g>
+    <!-- Secondary thinner highlights deeper into the fan -->
+    <g stroke="#E8F8E9" stroke-width="0.7" fill="none" opacity="0.55"
+       stroke-linecap="round">
+      <path d="M 268 70 L 200 220"/>
+      <path d="M 372 70 L 440 220"/>
+      <path d="M 220 100 L 130 240"/>
+      <path d="M 420 100 L 510 240"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Glass body fill — bright translucent gold gradient. -->
+  <use href="#body-path" fill="url(#glass-body)"
+       stroke="#7A5008" stroke-width="2.5" stroke-opacity="0.7"/>
+
+  <!-- Crystal-faceted diamond skin (clipped to body). -->
+  <g clip-path="url(#body-clip)">
+    <rect x="40" y="270" width="560" height="650" fill="url(#crystal-skin)"/>
+  </g>
+
+  <!-- Vertical center edge-light flare — the glass refraction line. -->
+  <g clip-path="url(#body-clip)">
+    <rect x="40" y="270" width="560" height="650" fill="url(#glass-center-flare)"/>
+  </g>
+
+  <!-- Inner rim shadow for round glassy form. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="580" rx="260" ry="320" fill="url(#glass-rim-shadow)"/>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#5A3F08" stroke-width="2.4" stroke-opacity="0.7"/>
+</svg>
+"""
+
+# ── Crystal / glass pineapple — PHOTOREAL studio render ──────────────
+# Translucent glass body with a vertical gold→honey gradient and a
+# warm internal glow at the upper center, faceted with hundreds of
+# individually-colored prismatic scales (4 brightness tiers, stable
+# pseudo-random distribution). Crown is layered jade/emerald glass
+# with bright mint tips. Sits in front of a dark elliptical backdrop
+# with a warm amber underlight so it reads as a studio render even
+# when the page hero behind it stays light.
+
+_HERO_PINEAPPLE_SVG_CRYSTAL_PHOTOREAL = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* Per-tier prismatic facet colors — now translucent so the body's
+       internal glow bleeds through every scale, and each facet carries
+       a soft bloom halo (drop-shadow) so the brightest tiers read as
+       miniature light sources. Strokes lightened so seams don't fight
+       the glow. */
+    .hero-pineapple .facet-t0,
+    .hero-pineapple .facet-t1,
+    .hero-pineapple .facet-t2,
+    .hero-pineapple .facet-t3 {
+      stroke: #4A2D00;
+      stroke-width: 0.7;
+      stroke-opacity: 0.45;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .hero-pineapple .facet-t0 {
+      fill: #FFF5CC;
+      fill-opacity: 0.78;
+      filter: drop-shadow(0 0 6px rgba(255, 245, 204, 0.85))
+              drop-shadow(0 0 14px rgba(255, 215, 0, 0.55));
+      animation: shimmerBright 3.6s ease-in-out infinite;
+    }
+    .hero-pineapple .facet-t1 {
+      fill: #FFE066;
+      fill-opacity: 0.70;
+      filter: drop-shadow(0 0 4px rgba(255, 224, 102, 0.55));
+      animation: shimmerLit    4.4s ease-in-out infinite;
+    }
+    .hero-pineapple .facet-t2 {
+      fill: #C8950A;
+      fill-opacity: 0.55;
+      animation: shimmerMid    5.2s ease-in-out infinite;
+    }
+    .hero-pineapple .facet-t3 {
+      fill: #8B5E00;
+      fill-opacity: 0.45;
+      animation: shimmerDeep   5.8s ease-in-out infinite;
+    }
+    /* Different cycle lengths give the prismatic shimmer an organic,
+       non-synchronized feel. We animate brightness only so the per-
+       tier color identity stays readable, and the bright tiers get
+       a bigger swing because they're the ones that "twinkle". */
+    @keyframes shimmerBright { 0%, 100% { filter: brightness(1) drop-shadow(0 0 6px rgba(255, 245, 204, 0.85)) drop-shadow(0 0 14px rgba(255, 215, 0, 0.55)); }
+                               50%      { filter: brightness(1.28) drop-shadow(0 0 9px rgba(255, 245, 204, 1)) drop-shadow(0 0 22px rgba(255, 215, 0, 0.85)); } }
+    @keyframes shimmerLit    { 0%, 100% { filter: brightness(1) drop-shadow(0 0 4px rgba(255, 224, 102, 0.55)); }
+                               50%      { filter: brightness(1.16) drop-shadow(0 0 7px rgba(255, 224, 102, 0.85)); } }
+    @keyframes shimmerMid    { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.10); } }
+    @keyframes shimmerDeep   { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.12); } }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .facet-t0,
+      .hero-pineapple .facet-t1,
+      .hero-pineapple .facet-t2,
+      .hero-pineapple .facet-t3 { animation: none; }
+    }
+
+    /* ── Fibonacci spiral KEYBOARD-POP animation ─────────────────
+       Three line families pop in sequentially over a 9-second cycle:
+         0–3 s : 8 gradual-slope spirals appear (magenta)
+         3–6 s : 13 medium-slope spirals join in (cyan)
+         6–9 s : 21 near-vertical spirals join (yellow)
+       Each line "pops up" with a bouncy translateY → 0 + scale(1)
+       like a keyboard key being released. After all three families
+       are visible the cycle restarts (lines fade out → loop). */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 4px currentColor)
+              drop-shadow(0 0 10px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A;
+      color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0;
+      color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C;
+      color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    /* 8 spirals: pop in 0–7%, peak bounce at 7%, settle at 14%, hold
+       through the rest of the cycle, fade out at 95–100%. */
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0;   transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1;   transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1;   transform: translateY(0)    scale(1); }
+      95%  { opacity: 1;   transform: translateY(0)    scale(1); }
+      100% { opacity: 0;   transform: translateY(14px) scale(0.92); }
+    }
+    /* 13 spirals: hidden until 33%, then pop in. */
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    /* 21 spirals: hidden until 66%, then pop in. */
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line {
+        animation: none;
+        opacity: 0.65;
+      }
+    }
+  </style>
+  <defs>
+    <!-- Dark studio backdrop ellipse — fades from near-black at the
+         pineapple's center out to fully transparent so it doesn't
+         create a hard rectangle on the surrounding hero canvas. -->
+    <radialGradient id="dark-backdrop" cx="50%" cy="55%" r="62%">
+      <stop offset="0%"   stop-color="#0A0A0A" stop-opacity="0.92"/>
+      <stop offset="55%"  stop-color="#0A0A0A" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Body vertical glass gradient: bright luminous gold up top,
+         deep honey at the base. This is the "translucent glass"
+         core fill that the per-scale facets sit on top of. -->
+    <linearGradient id="glass-body-vertical" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFEB7A"/>
+      <stop offset="20%"  stop-color="#FFD700"/>
+      <stop offset="55%"  stop-color="#E8AE08"/>
+      <stop offset="85%"  stop-color="#D4900A"/>
+      <stop offset="100%" stop-color="#8B5E00"/>
+    </linearGradient>
+
+    <!-- Internal warm glow — the "light from within the fruit".
+         Now bigger and brighter; pairs with the translucent facets
+         so the body genuinely looks lit from inside. -->
+    <radialGradient id="internal-glow" cx="50%" cy="38%" r="55%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="22%"  stop-color="#FFFAE0" stop-opacity="0.65"/>
+      <stop offset="55%"  stop-color="#FFE066" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#FFC107" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Secondary bloom that bleeds upward from the body center,
+         giving a strong "inner sun" feel under the translucent skin. -->
+    <radialGradient id="skin-bloom" cx="50%" cy="48%" r="48%">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#FFD700" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFA000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Soft blur for the skin-bloom layer. -->
+    <filter id="skin-bloom-blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18"/>
+    </filter>
+
+    <!-- Inner rim shadow rounds the silhouette so it reads as 3D glass. -->
+    <radialGradient id="glass-rim-shadow" cx="50%" cy="50%" r="60%">
+      <stop offset="65%"  stop-color="#3D2400" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1A1100" stop-opacity="0.7"/>
+    </radialGradient>
+
+    <!-- Jade / emerald crystal blade gradients. Three depth tiers —
+         deepest in the back, brightest in the front. -->
+    <linearGradient id="jade-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="6%"   stop-color="#A8FFD0"/>
+      <stop offset="22%"  stop-color="#6EE8A0"/>
+      <stop offset="42%"  stop-color="#00C87A"/>
+      <stop offset="72%"  stop-color="#1A7A4A"/>
+      <stop offset="100%" stop-color="#0D3D20"/>
+    </linearGradient>
+    <linearGradient id="jade-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#A8FFD0"/>
+      <stop offset="20%"  stop-color="#3FBD78"/>
+      <stop offset="55%"  stop-color="#1A7A4A"/>
+      <stop offset="100%" stop-color="#0A2D14"/>
+    </linearGradient>
+    <linearGradient id="jade-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#3FBD78"/>
+      <stop offset="40%"  stop-color="#1A7A4A"/>
+      <stop offset="78%"  stop-color="#0D3D20"/>
+      <stop offset="100%" stop-color="#06200E"/>
+    </linearGradient>
+
+    <!-- Warm amber underlight — diffuse glow from below as if the
+         pineapple is sitting on a glossy surface lit from beneath. -->
+    <filter id="warm-underlight" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="40"/>
+    </filter>
+
+    <!-- Soft amber ambient halo (top + sides). -->
+    <filter id="amber-ambient" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="28"/>
+    </filter>
+
+    <!-- Pineapple silhouette + clip path. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== DARK STUDIO BACKDROP =====
+       Soft elliptical near-black halo behind the pineapple so the
+       crystal pops without changing the surrounding page background. -->
+  <ellipse cx="320" cy="500" rx="400" ry="520" fill="url(#dark-backdrop)"/>
+
+  <!-- ===== WARM AMBER UNDERLIGHT =====
+       Diffuse warm light from below, as if reflected off a glossy
+       dark surface. Sits behind the body. -->
+  <g filter="url(#warm-underlight)" opacity="0.95">
+    <ellipse cx="320" cy="855" rx="260" ry="80" fill="#FFA000"/>
+    <ellipse cx="320" cy="875" rx="190" ry="50" fill="#FFC107" opacity="0.85"/>
+    <ellipse cx="320" cy="890" rx="140" ry="32" fill="#FFE066" opacity="0.75"/>
+  </g>
+
+  <!-- Faint amber ambient halo wrapping the whole sculpture. -->
+  <g filter="url(#amber-ambient)" opacity="0.55">
+    <ellipse cx="320" cy="540" rx="280" ry="340" fill="#C28C12"/>
+  </g>
+
+  <!-- Glossy surface reflection beneath the body (compressed dark sheen). -->
+  <ellipse cx="320" cy="900" rx="220" ry="14" fill="#000000" opacity="0.6"/>
+
+  <!-- ===== CROWN — jade / emerald crystal blades, 3 depth layers ===== -->
+  <g class="hero-crown">
+    <!-- Layer 1: deepest back blades -->
+    <g stroke="#06200E" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#jade-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#jade-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#jade-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#jade-deep)" opacity="0.88"/>
+    </g>
+
+    <!-- Layer 2: mid-depth blades -->
+    <g stroke="#0A2D14" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 304 360 L 168 90 L 190 130 L 316 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 336 360 L 472 90 L 450 130 L 324 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 309 360 L 240 30 L 268 70 L 314 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 331 360 L 400 30 L 372 70 L 326 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#jade-mid)"/>
+    </g>
+
+    <!-- Layer 3: bright foreground blades — the cut-glass tip-glints -->
+    <g stroke="#0D3D20" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#jade-bright)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#jade-bright)"/>
+      <path d="M 308 360 L 284 18 L 308 60 L 318 360 Z" fill="url(#jade-bright)" opacity="0.95"/>
+      <path d="M 332 360 L 356 18 L 332 60 L 322 360 Z" fill="url(#jade-bright)" opacity="0.95"/>
+    </g>
+
+    <!-- Bright mint edge-light highlights along front blades -->
+    <g stroke="#A8FFD0" stroke-width="1.2" fill="none" opacity="0.85"
+       stroke-linecap="round">
+      <path d="M 320 4 L 320 200"/>
+      <path d="M 312 14 L 296 200"/>
+      <path d="M 328 14 L 344 200"/>
+      <path d="M 300 28 L 270 220"/>
+      <path d="M 340 28 L 370 220"/>
+    </g>
+    <!-- Secondary thinner mint highlights deeper into the fan -->
+    <g stroke="#6EE8A0" stroke-width="0.7" fill="none" opacity="0.6"
+       stroke-linecap="round">
+      <path d="M 268 70 L 200 220"/>
+      <path d="M 372 70 L 440 220"/>
+      <path d="M 220 100 L 130 240"/>
+      <path d="M 420 100 L 510 240"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Translucent glass core fill — vertical gold→honey gradient. -->
+  <use href="#body-path" fill="url(#glass-body-vertical)"
+       stroke="#3D2400" stroke-width="2" stroke-opacity="0.85"/>
+
+  <!-- Internal warm glow (light from within the fruit) — larger and
+       brighter so it bleeds visibly through the translucent facets. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="460" rx="280" ry="280" fill="url(#internal-glow)"/>
+  </g>
+
+  <!-- Skin-bloom layer: a softly-blurred warm bloom sitting BENEATH
+       the facets, giving the translucent skin a true inner-sun feel
+       once light leaks through every scale. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="540" rx="260" ry="320"
+             fill="url(#skin-bloom)" filter="url(#skin-bloom-blur)"/>
+  </g>
+
+  <!-- Per-scale prismatic crystal facets — the rich shimmer.
+       Each rect carries a .facet-t0..3 class (4 brightness tiers,
+       distributed pseudo-randomly with a stable seed). The whole
+       grid is rotated 45° around the body center, then clipped
+       to the body silhouette. Facets are translucent + bloom-haloed
+       so the inner glow radiates through the skin. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-crystal-grid" transform="rotate(45 320 585)">
+        {FACETS}
+    </g>
+  </g>
+
+  <!-- Fibonacci spiral overlay (keyboard-pop animation).
+       Three families of straight line segments — 8 / 13 / 21 — each
+       spanning the body silhouette at a specific slope. Animated by
+       per-family CSS keyframes so they pop in sequentially every
+       9 s like keys on a keyboard. Drawn on top of the facets but
+       still clipped to the body silhouette. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
+  </g>
+
+  <!-- Inner rim shadow rounds the silhouette into a glassy 3D form. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="580" rx="270" ry="320" fill="url(#glass-rim-shadow)"/>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean cut-glass rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#1A1100" stroke-width="2.6" stroke-opacity="0.9"/>
+</svg>
+"""
+
+# ── Faceted-3D pineapple — engineered cut-stone variant ──────────────
+# Each diamond scale carries an explicit 3-zone vertical gradient that
+# appears upper-right → lower-left after the pattern's 45° rotation:
+#   • bright near-white  #FFF8C0  (UR highlight zone)
+#   • flat golden amber  #D4900A  (center base zone)
+#   • deep amber shadow  #8B5E00  (LL shadow zone)
+# Stepped color stops produce visibly distinct zones (not a smooth
+# fade) so each scale reads as a faceted convex surface catching a
+# single light source from the upper right. Adjacent scales are
+# separated by 2 px burnt-brown #3D1F00 grout, and a single white
+# specular glint dot sits in the upper-right peak of each diamond.
+# Crown blades are explicit 3-tone gradients (mint tip → emerald body
+# → forest base) with bright mint spine highlights down the front.
+
+_HERO_PINEAPPLE_SVG_FACETED_3D = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- ── Body radial gradient (sits BENEATH the facets) ──────────
+         Bright luminous gold center → deep amber edges. Provides
+         overall tonal consistency and shows at the rim where the
+         facet pattern doesn't reach. -->
+    <radialGradient id="body-radial" cx="50%" cy="40%" r="68%">
+      <stop offset="0%"   stop-color="#FFE082"/>
+      <stop offset="35%"  stop-color="#FFD700"/>
+      <stop offset="75%"  stop-color="#D4900A"/>
+      <stop offset="100%" stop-color="#5A3F08"/>
+    </radialGradient>
+
+    <!-- ── 3-zone stepped facet gradient ───────────────────────────
+         Vertical in pattern coords; appears UR→LL in screen space
+         after the pattern's 45° rotation. Hard color stops produce
+         three visibly distinct zones (highlight / base / shadow)
+         instead of a smooth blend — that's what gives the carved
+         "faceted" look. -->
+    <linearGradient id="facet-3d-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFF8C0"/>  <!-- bright highlight -->
+      <stop offset="28%"  stop-color="#FFF8C0"/>
+      <stop offset="36%"  stop-color="#D4900A"/>  <!-- step → base -->
+      <stop offset="64%"  stop-color="#D4900A"/>
+      <stop offset="72%"  stop-color="#8B5E00"/>  <!-- step → shadow -->
+      <stop offset="100%" stop-color="#8B5E00"/>
+    </linearGradient>
+
+    <!-- ── Faceted skin pattern ────────────────────────────────────
+         A 36×36 square tile rotated 45° (so each tile renders as an
+         interlocking diamond). Each tile carries:
+           (1) the 3-zone vertical gradient fill
+           (2) a 2 px burnt-brown #3D1F00 stroke (the deep grout)
+           (3) a tiny white #FFFFFF specular glint at the upper-right
+               peak of the diamond. Pattern coord (24, 6) maps to the
+               upper-right area of the rotated diamond in screen space
+               (verified: x_pat * cos45 - y_pat * sin45 ≈ 12.7,
+               x_pat * sin45 + y_pat * cos45 ≈ 21.2 — sits inside the
+               UR edge of the diamond). -->
+    <pattern id="facet-skin" x="0" y="0" width="36" height="36"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect x="0" y="0" width="36" height="36" fill="url(#facet-3d-grad)"/>
+      <rect x="0" y="0" width="36" height="36" fill="none"
+            stroke="#3D1F00" stroke-width="2" stroke-linejoin="miter"/>
+      <circle cx="24" cy="6" r="1.6" fill="#FFFFFF" fill-opacity="0.92"/>
+      <!-- Soft halo around the glint for a touch of bloom -->
+      <circle cx="24" cy="6" r="3.4" fill="#FFFFFF" fill-opacity="0.18"/>
+    </pattern>
+
+    <!-- ── Crown leaf 3-tone gradients ─────────────────────────────
+         Every blade is shaded mint tip → emerald body → forest base.
+         Three depths (bright / mid / deep) for the layered fan. -->
+    <linearGradient id="leaf-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#A8FFD0"/>  <!-- bright mint tip -->
+      <stop offset="25%"  stop-color="#3FBD78"/>
+      <stop offset="55%"  stop-color="#1A7A4A"/>  <!-- emerald body -->
+      <stop offset="100%" stop-color="#0D3D20"/>  <!-- forest base -->
+    </linearGradient>
+    <linearGradient id="leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#7EE0A8"/>
+      <stop offset="35%"  stop-color="#1A7A4A"/>
+      <stop offset="100%" stop-color="#0A2D14"/>
+    </linearGradient>
+    <linearGradient id="leaf-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#3FBD78"/>
+      <stop offset="50%"  stop-color="#0D3D20"/>
+      <stop offset="100%" stop-color="#06200E"/>
+    </linearGradient>
+    <!-- Bright mint spine highlight gradient (thin elliptical stripe
+         down the center of each front blade for the glossy spine). -->
+    <linearGradient id="leaf-spine" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="20%"  stop-color="#A8FFD0" stop-opacity="0.85"/>
+      <stop offset="60%"  stop-color="#A8FFD0" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#A8FFD0" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Pineapple silhouette + clip path. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+
+    <!-- Soft amber ambient halo (warm backlight, not a directional
+         light source — just atmospheric warmth). -->
+    <filter id="amber-halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="32"/>
+    </filter>
+
+    <!-- Upper-right rim-light gradient: subtle bright crescent on
+         the upper-right of the body silhouette confirming the
+         single-light-source-from-upper-right convention. -->
+    <radialGradient id="rim-light-ur" cx="78%" cy="22%" r="32%">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#FFE066" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFE066" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Lower-left ambient occlusion: subtle deepening on the
+         opposite side of the light to round the body. -->
+    <radialGradient id="ao-ll" cx="22%" cy="78%" r="32%">
+      <stop offset="0%"   stop-color="#1A1100" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#3D2400" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#3D2400" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ===== AMBER AMBIENT HALO ===== -->
+  <g filter="url(#amber-halo)" opacity="0.6">
+    <ellipse cx="320" cy="580" rx="290" ry="330" fill="#FFC107" opacity="0.45"/>
+    <ellipse cx="320" cy="580" rx="180" ry="220" fill="#FFE066" opacity="0.45"/>
+  </g>
+
+  <!-- ===== CROWN — 3-tone shaded jade blades, layered in depth ===== -->
+  <g class="hero-crown">
+    <!-- Layer 1: deepest back blades (widest fan) -->
+    <g stroke="#06200E" stroke-width="1" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#leaf-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#leaf-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#leaf-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#leaf-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#leaf-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#leaf-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#leaf-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#leaf-deep)" opacity="0.88"/>
+    </g>
+
+    <!-- Layer 2: mid-depth blades -->
+    <g stroke="#0A2D14" stroke-width="1" stroke-linejoin="round">
+      <path d="M 304 360 L 168 90 L 190 130 L 316 360 Z" fill="url(#leaf-mid)"/>
+      <path d="M 336 360 L 472 90 L 450 130 L 324 360 Z" fill="url(#leaf-mid)"/>
+      <path d="M 309 360 L 240 30 L 268 70 L 314 360 Z" fill="url(#leaf-mid)"/>
+      <path d="M 331 360 L 400 30 L 372 70 L 326 360 Z" fill="url(#leaf-mid)"/>
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#leaf-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#leaf-mid)"/>
+    </g>
+
+    <!-- Layer 3: foreground bright blades — full mint→forest 3-tone -->
+    <g stroke="#0D3D20" stroke-width="1" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#leaf-bright)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#leaf-bright)"/>
+      <path d="M 308 360 L 284 18 L 308 60 L 318 360 Z" fill="url(#leaf-bright)" opacity="0.95"/>
+      <path d="M 332 360 L 356 18 L 332 60 L 322 360 Z" fill="url(#leaf-bright)" opacity="0.95"/>
+    </g>
+
+    <!-- Bright mint spines down the center of front blades.
+         Drawn as thin wedge polygons filled with the spine gradient
+         so they themselves are 3-tone (white → mint → fading mint). -->
+    <g>
+      <polygon points="320,4   322,300  318,300"  fill="url(#leaf-spine)"/>
+      <polygon points="312,14  306,260  302,260"  fill="url(#leaf-spine)"/>
+      <polygon points="328,14  338,260  334,260"  fill="url(#leaf-spine)"/>
+      <polygon points="300,28  282,250  278,250"  fill="url(#leaf-spine)"/>
+      <polygon points="340,28  362,250  358,250"  fill="url(#leaf-spine)"/>
+    </g>
+
+    <!-- Secondary thinner mint spines deeper into the fan -->
+    <g stroke="#6EE8A0" stroke-width="0.8" fill="none" opacity="0.65"
+       stroke-linecap="round">
+      <path d="M 268 70 L 200 240"/>
+      <path d="M 372 70 L 440 240"/>
+      <path d="M 220 100 L 130 260"/>
+      <path d="M 420 100 L 510 260"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Body radial gradient — bright gold center → deep amber edges.
+       Sits BEHIND the faceted skin; visible at the rim. Stroked with
+       the same burnt-brown as the grout for a continuous outline. -->
+  <use href="#body-path" fill="url(#body-radial)"
+       stroke="#3D1F00" stroke-width="2.5" stroke-opacity="0.9"/>
+
+  <!-- 3D faceted skin (clipped to body): per-scale 3-zone gradient +
+       2px burnt-brown grout + white specular glints. -->
+  <g clip-path="url(#body-clip)">
+    <rect x="40" y="270" width="560" height="650" fill="url(#facet-skin)"/>
+  </g>
+
+  <!-- Upper-right rim light (confirms single light source). -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="450" cy="380" rx="180" ry="220" fill="url(#rim-light-ur)"/>
+  </g>
+
+  <!-- Lower-left ambient occlusion (rounds the body). -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="190" cy="780" rx="180" ry="220" fill="url(#ao-ll)"/>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean cut-glass rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#3D1F00" stroke-width="3" stroke-opacity="0.95"/>
+</svg>
+"""
+
+# ── Raised-dome pineapple — gem-cluster skin ─────────────────────────
+# Each scale is a fully enclosed convex diamond rendered as a 3D dome
+# via a centered radial gradient (bright center → amber → dark edge).
+# Adjacent scales are inset inside their grid cells, so the dark body
+# fill underneath shows through the gaps as deep carved groove
+# channels — not thin painted lines. Position-based brightness tiers
+# (computed in screen space against an upper-center light source at
+# (320, 380)) make scales near the top of the fruit visibly brighter
+# overall and scales near the bottom-edges sit in deeper shadow.
+# Result: hundreds of small raised golden gems on a sphere.
+
+_HERO_PINEAPPLE_SVG_DOMES_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* Each tier = one shared radial-gradient fill. The same gradient
+       is applied to every scale in that tier, but because radial
+       gradients with default objectBoundingBox units are anchored
+       to each filled element's own bounding box, each scale gets
+       its own centered dome highlight (not one shared gradient
+       smeared across the body). */
+    .hero-pineapple .dome-t0 { fill: url(#dome-t0); }
+    .hero-pineapple .dome-t1 { fill: url(#dome-t1); }
+    .hero-pineapple .dome-t2 { fill: url(#dome-t2); }
+    .hero-pineapple .dome-t3 { fill: url(#dome-t3); }
+  </style>
+  <defs>
+    <!-- ── Dome gradients: 4 tiers, each with the same shape (bright
+         center → mid amber → dark edge) but progressively darker
+         overall colors. Tier 0 sits closest to the light, tier 3
+         sits in the deepest shadow zone. r=58% gives a tight bright
+         highlight that fades quickly to the dark edge — sells the
+         "raised blister catching light" feel. -->
+    <radialGradient id="dome-t0" cx="50%" cy="50%" r="58%">
+      <stop offset="0%"   stop-color="#FFF5A0"/>
+      <stop offset="32%"  stop-color="#FFE066"/>
+      <stop offset="72%"  stop-color="#D4900A"/>
+      <stop offset="100%" stop-color="#5A3F08"/>
+    </radialGradient>
+    <radialGradient id="dome-t1" cx="50%" cy="50%" r="58%">
+      <stop offset="0%"   stop-color="#FFE066"/>
+      <stop offset="32%"  stop-color="#F2C200"/>
+      <stop offset="72%"  stop-color="#A8770A"/>
+      <stop offset="100%" stop-color="#3D2400"/>
+    </radialGradient>
+    <radialGradient id="dome-t2" cx="50%" cy="50%" r="58%">
+      <stop offset="0%"   stop-color="#E8AE08"/>
+      <stop offset="32%"  stop-color="#C28C12"/>
+      <stop offset="72%"  stop-color="#7A5008"/>
+      <stop offset="100%" stop-color="#2A1A00"/>
+    </radialGradient>
+    <radialGradient id="dome-t3" cx="50%" cy="50%" r="58%">
+      <stop offset="0%"   stop-color="#A8770A"/>
+      <stop offset="32%"  stop-color="#7A5008"/>
+      <stop offset="72%"  stop-color="#3D1F00"/>
+      <stop offset="100%" stop-color="#1A0F00"/>
+    </radialGradient>
+
+    <!-- ── Body underglow: deep dark brown so groove gaps read as
+         carved channels, with a hint of warm amber bleeding from
+         the center so the silhouette doesn't read as pure black. -->
+    <radialGradient id="body-underbrown" cx="50%" cy="38%" r="65%">
+      <stop offset="0%"   stop-color="#5A3F08"/>
+      <stop offset="55%"  stop-color="#3D1F00"/>
+      <stop offset="100%" stop-color="#1A0F00"/>
+    </radialGradient>
+
+    <!-- ── Crown blade gradients (jade / emerald translucent glass) -->
+    <linearGradient id="jade-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="6%"   stop-color="#A8FFD0"/>
+      <stop offset="22%"  stop-color="#6EE8A0"/>
+      <stop offset="42%"  stop-color="#00C87A"/>
+      <stop offset="72%"  stop-color="#1A7A4A"/>
+      <stop offset="100%" stop-color="#0D3D20"/>
+    </linearGradient>
+    <linearGradient id="jade-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#A8FFD0"/>
+      <stop offset="20%"  stop-color="#3FBD78"/>
+      <stop offset="55%"  stop-color="#1A7A4A"/>
+      <stop offset="100%" stop-color="#0A2D14"/>
+    </linearGradient>
+    <linearGradient id="jade-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#3FBD78"/>
+      <stop offset="40%"  stop-color="#1A7A4A"/>
+      <stop offset="78%"  stop-color="#0D3D20"/>
+      <stop offset="100%" stop-color="#06200E"/>
+    </linearGradient>
+
+    <!-- ── Studio backdrop + warm halo (kept from the photoreal
+         iteration so the gem skin pops against a darker frame). -->
+    <radialGradient id="dark-backdrop" cx="50%" cy="55%" r="62%">
+      <stop offset="0%"   stop-color="#0A0A0A" stop-opacity="0.85"/>
+      <stop offset="55%"  stop-color="#0A0A0A" stop-opacity="0.50"/>
+      <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="amber-halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="32"/>
+    </filter>
+
+    <!-- ── Upper-center top-light wash — additive bright zone over
+         the upper-center of the body. Reinforces the global lighting
+         direction set by the per-scale tier system. -->
+    <radialGradient id="top-light-wash" cx="50%" cy="14%" r="50%">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.55"/>
+      <stop offset="50%"  stop-color="#FFE066" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFE066" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ── Lower-edge ambient occlusion — subtle dark crescent on
+         the bottom edges so the body reads as a sphere. -->
+    <radialGradient id="bottom-shadow" cx="50%" cy="92%" r="55%">
+      <stop offset="0%"   stop-color="#0A0500" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#1A0F00" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#1A0F00" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Pineapple silhouette + clip path. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== STUDIO BACKDROP + AMBIENT HALO ===== -->
+  <ellipse cx="320" cy="500" rx="400" ry="520" fill="url(#dark-backdrop)"/>
+  <g filter="url(#amber-halo)" opacity="0.55">
+    <ellipse cx="320" cy="540" rx="280" ry="340" fill="#C28C12"/>
+    <ellipse cx="320" cy="380" rx="180" ry="160" fill="#FFE066" opacity="0.7"/>
+  </g>
+
+  <!-- ===== CROWN — jade crystal blades, layered ===== -->
+  <g class="hero-crown">
+    <g stroke="#06200E" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#jade-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#jade-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#jade-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#jade-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#jade-deep)" opacity="0.88"/>
+    </g>
+    <g stroke="#0A2D14" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 304 360 L 168 90 L 190 130 L 316 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 336 360 L 472 90 L 450 130 L 324 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 309 360 L 240 30 L 268 70 L 314 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 331 360 L 400 30 L 372 70 L 326 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#jade-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#jade-mid)"/>
+    </g>
+    <g stroke="#0D3D20" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#jade-bright)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#jade-bright)"/>
+      <path d="M 308 360 L 284 18 L 308 60 L 318 360 Z" fill="url(#jade-bright)" opacity="0.95"/>
+      <path d="M 332 360 L 356 18 L 332 60 L 322 360 Z" fill="url(#jade-bright)" opacity="0.95"/>
+    </g>
+    <g stroke="#A8FFD0" stroke-width="1.2" fill="none" opacity="0.85"
+       stroke-linecap="round">
+      <path d="M 320 4 L 320 200"/>
+      <path d="M 312 14 L 296 200"/>
+      <path d="M 328 14 L 344 200"/>
+      <path d="M 300 28 L 270 220"/>
+      <path d="M 340 28 L 370 220"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY — DEEP-GROOVE GEM CLUSTER ===== -->
+  <!-- Dark underbody — this is what shows through every groove gap. -->
+  <use href="#body-path" fill="url(#body-underbrown)"
+       stroke="#0A0500" stroke-width="2.8" stroke-opacity="0.95"/>
+
+  <!-- Per-scale dome rects (four tiers, brightness picked by screen-
+       space distance from the upper-center light at (320, 380)). The
+       parent <g> rotates the entire grid 45° around (320, 585), so
+       each square renders as an upright interlocking diamond. Inset
+       on each rect leaves a ~5px deep groove gap between scales. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-dome-grid" transform="rotate(45 320 585)">
+        {DOMES}
+    </g>
+  </g>
+
+  <!-- Top-light wash — an additive cream-amber bloom over the upper
+       center of the body, reinforcing the global light direction. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="320" rx="240" ry="220" fill="url(#top-light-wash)"/>
+  </g>
+
+  <!-- Bottom ambient occlusion — deeper shadow on the lower edge so
+       the body reads as a sphere catching light from above. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="850" rx="280" ry="140" fill="url(#bottom-shadow)"/>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#0A0500" stroke-width="3" stroke-opacity="1"/>
+</svg>
+"""
+
+# ── Naturalistic pineapple (real-fruit palette) + Fibonacci spirals ──
+# Matte gold-amber dome scales with greenish-brown edges and a small
+# dark eye dot at every scale's center — the dried bract you see on a
+# real pineapple. Subtle position-based brightness (light from above,
+# slight darkening at the bottom) keeps the look organic rather than
+# dramatic. The Fibonacci spiral keyboard-pop overlay (8 / 13 / 21)
+# is layered on top for the teaching animation.
+
+_HERO_PINEAPPLE_SVG_NATURAL_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── Per-tier scale gradients (each tier picks one shared
+       radial gradient — same shape, slightly darker overall as
+       you move away from the light source above). objectBoundingBox
+       (default) anchors the gradient to each rect's own box, so
+       every scale gets its own centered dome highlight. */
+    .hero-pineapple .natural-t0 { fill: url(#dome-natural-0); }
+    .hero-pineapple .natural-t1 { fill: url(#dome-natural-1); }
+    .hero-pineapple .natural-t2 { fill: url(#dome-natural-2); }
+    .hero-pineapple .natural-t3 { fill: url(#dome-natural-3); }
+    /* Eye dot — the dried bract at the center of every fruitlet. */
+    .hero-pineapple .scale-eye {
+      fill: #1A0F00;
+      pointer-events: none;
+    }
+
+    /* ── Fibonacci spiral KEYBOARD-POP animation (unchanged) ──── */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 4px currentColor)
+              drop-shadow(0 0 10px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A;
+      color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0;
+      color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C;
+      color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0; transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1; transform: translateY(0)    scale(1); }
+      95%  { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line { animation: none; opacity: 0.65; }
+    }
+  </style>
+  <defs>
+    <!-- ── Naturalistic dome gradients, 4 tiers ───────────────────
+         Each scale fades from a warm gold center (offset slightly
+         upward, mimicking light-from-above) through amber to a
+         greenish-brown edge — exactly the palette you see on a
+         ripe pineapple's eye. Tiers darken slightly with distance
+         from the light source. -->
+    <radialGradient id="dome-natural-0" cx="48%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#FFE066"/>
+      <stop offset="20%"  stop-color="#F4C430"/>
+      <stop offset="55%"  stop-color="#C8950A"/>
+      <stop offset="85%"  stop-color="#7A5A14"/>
+      <stop offset="100%" stop-color="#3D2C18"/>
+    </radialGradient>
+    <radialGradient id="dome-natural-1" cx="48%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#F4C430"/>
+      <stop offset="20%"  stop-color="#D8AB18"/>
+      <stop offset="55%"  stop-color="#A8770A"/>
+      <stop offset="85%"  stop-color="#5A4818"/>
+      <stop offset="100%" stop-color="#2D2010"/>
+    </radialGradient>
+    <radialGradient id="dome-natural-2" cx="48%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#D8AB18"/>
+      <stop offset="20%"  stop-color="#B88B0A"/>
+      <stop offset="55%"  stop-color="#7A5A14"/>
+      <stop offset="85%"  stop-color="#4A3818"/>
+      <stop offset="100%" stop-color="#1F1A08"/>
+    </radialGradient>
+    <radialGradient id="dome-natural-3" cx="48%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#B88B0A"/>
+      <stop offset="20%"  stop-color="#7A5A14"/>
+      <stop offset="55%"  stop-color="#4A3818"/>
+      <stop offset="85%"  stop-color="#2D2010"/>
+      <stop offset="100%" stop-color="#0F0A02"/>
+    </radialGradient>
+
+    <!-- Body underbase: warm dark brown-green (the visible groove
+         color between scales). Sits beneath the dome rects. -->
+    <radialGradient id="body-natural-base" cx="50%" cy="38%" r="65%">
+      <stop offset="0%"   stop-color="#5A4818"/>
+      <stop offset="55%"  stop-color="#3D2C18"/>
+      <stop offset="100%" stop-color="#1A1108"/>
+    </radialGradient>
+
+    <!-- Subtle top-light wash + bottom shadow for natural lighting. -->
+    <radialGradient id="natural-top-light" cx="50%" cy="14%" r="50%">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.32"/>
+      <stop offset="60%"  stop-color="#FFE066" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFE066" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="natural-bottom-shadow" cx="50%" cy="92%" r="55%">
+      <stop offset="0%"   stop-color="#0F0A02" stop-opacity="0.50"/>
+      <stop offset="60%"  stop-color="#1F1A08" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#1F1A08" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Crown gradients — naturalistic dark forest green (matches
+         the reference photographs of a real pineapple crown). -->
+    <linearGradient id="crown-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#7BD17B"/>
+      <stop offset="35%"  stop-color="#4CAF50"/>
+      <stop offset="75%"  stop-color="#2D6B2D"/>
+      <stop offset="100%" stop-color="#1A4A1A"/>
+    </linearGradient>
+    <linearGradient id="crown-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#4CAF50"/>
+      <stop offset="40%"  stop-color="#2D6B2D"/>
+      <stop offset="100%" stop-color="#1A3A1A"/>
+    </linearGradient>
+    <linearGradient id="crown-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#2D6B2D"/>
+      <stop offset="55%"  stop-color="#1A4A1A"/>
+      <stop offset="100%" stop-color="#0D2D0D"/>
+    </linearGradient>
+
+    <!-- Soft warm ambient halo (no harsh studio lighting) -->
+    <filter id="warm-halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="34"/>
+    </filter>
+
+    <!-- Pineapple silhouette + clip path. -->
+    <path id="body-path"
+          d="M 320 285 C 200 290, 92 400, 80 530 C 65 670, 95 830, 220 875
+             C 280 895, 360 895, 420 875 C 545 830, 575 670, 560 530
+             C 550 400, 440 290, 320 285 Z"/>
+    <clipPath id="body-clip"><use href="#body-path"/></clipPath>
+  </defs>
+
+  <!-- ===== AMBIENT WARM HALO (subtle, not dramatic) ===== -->
+  <g filter="url(#warm-halo)" opacity="0.45">
+    <ellipse cx="320" cy="580" rx="280" ry="320" fill="#C28C12" opacity="0.45"/>
+    <ellipse cx="320" cy="380" rx="170" ry="150" fill="#FFE066" opacity="0.55"/>
+  </g>
+
+  <!-- ===== CROWN — dark green forest blades, layered ===== -->
+  <g class="hero-crown">
+    <g stroke="#0D2D0D" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 302 360 L 96 145 L 116 178 L 314 360 Z" fill="url(#crown-deep)" opacity="0.95"/>
+      <path d="M 338 360 L 544 145 L 524 178 L 326 360 Z" fill="url(#crown-deep)" opacity="0.95"/>
+      <path d="M 305 360 L 145 65 L 170 100 L 313 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 335 360 L 495 65 L 470 100 L 327 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 308 360 L 215 25 L 242 60 L 312 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 332 360 L 425 25 L 398 60 L 328 360 Z" fill="url(#crown-deep)"/>
+      <path d="M 311 360 L 92 240 L 110 270 L 318 360 Z" fill="url(#crown-deep)" opacity="0.88"/>
+      <path d="M 329 360 L 548 240 L 530 270 L 322 360 Z" fill="url(#crown-deep)" opacity="0.88"/>
+    </g>
+    <g stroke="#1A3A1A" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 304 360 L 168 90 L 190 130 L 316 360 Z" fill="url(#crown-mid)"/>
+      <path d="M 336 360 L 472 90 L 450 130 L 324 360 Z" fill="url(#crown-mid)"/>
+      <path d="M 309 360 L 240 30 L 268 70 L 314 360 Z" fill="url(#crown-mid)"/>
+      <path d="M 331 360 L 400 30 L 372 70 L 326 360 Z" fill="url(#crown-mid)"/>
+      <path d="M 311 360 L 270 8 L 296 48 L 315 360 Z" fill="url(#crown-mid)"/>
+      <path d="M 329 360 L 370 8 L 344 48 L 325 360 Z" fill="url(#crown-mid)"/>
+    </g>
+    <g stroke="#1A4A1A" stroke-width="0.7" stroke-linejoin="round">
+      <path d="M 314 360 L 318 -2 L 332 56 L 322 360 Z" fill="url(#crown-bright)"/>
+      <path d="M 326 360 L 322 -2 L 308 56 L 318 360 Z" fill="url(#crown-bright)"/>
+      <path d="M 308 360 L 284 18 L 308 60 L 318 360 Z" fill="url(#crown-bright)" opacity="0.95"/>
+      <path d="M 332 360 L 356 18 L 332 60 L 322 360 Z" fill="url(#crown-bright)" opacity="0.95"/>
+    </g>
+    <!-- Subtle lighter spine highlights down the front blades -->
+    <g stroke="#76C57A" stroke-width="0.9" fill="none" opacity="0.55"
+       stroke-linecap="round">
+      <path d="M 320 8 L 320 200"/>
+      <path d="M 312 18 L 296 200"/>
+      <path d="M 328 18 L 344 200"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Dark warm underbase (visible as the groove between scales). -->
+  <use href="#body-path" fill="url(#body-natural-base)"
+       stroke="#1A1108" stroke-width="2.5" stroke-opacity="0.95"/>
+
+  <!-- Per-scale dome rects + per-scale eye dots. The whole grid is
+       rotated 45° around the body center, then clipped to the body
+       silhouette. Tiered brightness comes from each rect's class. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-natural-grid" transform="rotate(45 320 585)">
+        {NATURAL}
+    </g>
+  </g>
+
+  <!-- Subtle top-light wash — natural sunlight from above. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="320" rx="240" ry="220" fill="url(#natural-top-light)"/>
+  </g>
+  <!-- Bottom ambient occlusion — rounds the body subtly. -->
+  <g clip-path="url(#body-clip)">
+    <ellipse cx="320" cy="850" rx="280" ry="140" fill="url(#natural-bottom-shadow)"/>
+  </g>
+
+  <!-- Fibonacci spiral overlay — keyboard-pop animation, on top of
+       the realistic skin so the geometry is still teachable. -->
+  <g clip-path="url(#body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
+  </g>
+
+  <!-- Crisp body outline drawn last for a clean rim. -->
+  <use href="#body-path" fill="none"
+       stroke="#1A1108" stroke-width="2.8" stroke-opacity="0.95"/>
+</svg>
+"""
+
+# Parked: naturalistic per-scale SVG pineapple (the gold-amber dome
+# scales with eye dots). Kept for easy switch-back.
+_HERO_PINEAPPLE_SVG_NATURAL = (
+    _HERO_PINEAPPLE_SVG_NATURAL_TEMPLATE
+    .replace("{NATURAL}", _PINEAPPLE_NATURAL_SKIN_HTML)
+    .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_HTML)
+)
+
+
+def _load_pineapple_photo_data_uri() -> str:
+    """Load the cropped pineapple photograph and inline it as a
+    base64 data URI so the visualization stays a single self-
+    contained HTML file. The crop was produced from the reference
+    screenshot via `sips` (see .codebase-almanac/assets/).
+
+    Returns an empty string if the asset is missing — the photo
+    variant is currently parked, so the file isn't required for
+    the active design and a missing file should not crash the
+    extractor.
+    """
+    import base64
+    import os
+    photo_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        ".codebase-almanac",
+        "assets",
+        "pineapple-photo.png",
+    )
+    try:
+        with open(photo_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("ascii")
+    except FileNotFoundError:
+        return ""
+    # sips wrote JPEG bytes under the .png extension — the real
+    # bytes start with `/9j/` (JPEG SOI), so we declare image/jpeg.
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+_PINEAPPLE_PHOTO_DATA_URI = _load_pineapple_photo_data_uri()
+
+
+def _load_crystal_pineapple_render_data_uri() -> str:
+    """Load the AI-generated faceted-crystal pineapple render and
+    inline it as a base64 PNG data URI so the visualization stays a
+    single self-contained HTML file.
+
+    Looks for `assets/crystal-pineapple.png` next to the repo root.
+    Returns an empty string if missing so the build does not crash.
+    """
+    import base64
+    import os
+    render_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "assets",
+        "crystal-pineapple.png",
+    )
+    try:
+        with open(render_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("ascii")
+    except FileNotFoundError:
+        return ""
+    return f"data:image/png;base64,{encoded}"
+
+
+_CRYSTAL_PINEAPPLE_RENDER_DATA_URI = _load_crystal_pineapple_render_data_uri()
+
+# Hero variant that drops the AI-generated faceted-crystal pineapple
+# render straight into the hero slot. Uses an <img> rather than an SVG
+# so the photoreal PBR detail (caustics, fresnel, internal glow) is
+# preserved 1:1. The `.hero-pineapple` class already supplies width
+# 100% + object-fit:contain, so an <img> sits in the same frame as
+# the previous SVG variants.
+_HERO_PINEAPPLE_IMG_CRYSTAL_RENDER = (
+    '<img class="hero-pineapple" '
+    'src="{SRC}" alt="Faceted crystal pineapple" '
+    'draggable="false" />'
+).replace("{SRC}", _CRYSTAL_PINEAPPLE_RENDER_DATA_URI)
+
+# ── Active design: the actual pineapple photograph ───────────────
+# Per the user: "take exactly the picture of the pineapple skin".
+# We embed the cropped middle pineapple from the reference image as
+# an SVG <image> so it sits in the same hero slot as the previous
+# generated illustrations, with a soft radial mask that fades the
+# cream studio background into the dark hero panel.
+_HERO_PINEAPPLE_SVG_PHOTO_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── Fibonacci spiral KEYBOARD-POP animation overlay ──────────
+       8 → 13 → 21 spirals pop in like keyboard keys on a 9-second
+       loop. Each line is stroked with a glowing color so it reads
+       clearly against the photographic skin. */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 3.2;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 5px currentColor)
+              drop-shadow(0 0 12px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A;
+      color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0;
+      color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C;
+      color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0; transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1; transform: translateY(0)    scale(1); }
+      95%  { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line { animation: none; opacity: 0.7; }
+    }
+  </style>
+  <defs>
+    <!-- Feathered mask: keep the pineapple sharp in the center,
+         fade the surrounding cream background out to transparent
+         so it blends into the dark hero panel. -->
+    <radialGradient id="photo-feather" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="1"/>
+      <stop offset="62%"  stop-color="#fff" stop-opacity="1"/>
+      <stop offset="82%"  stop-color="#fff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="photo-mask" maskUnits="userSpaceOnUse"
+          x="40" y="80" width="560" height="800">
+      <rect x="40" y="80" width="560" height="800"
+            fill="url(#photo-feather)"/>
+    </mask>
+
+    <!-- Body silhouette clip — keeps the spiral lines on the fruit
+         and off the surrounding background / crown. Fitted to the
+         crystal-pineapple crop (taller, slightly narrower). -->
+    <clipPath id="photo-body-clip">
+      <ellipse cx="337" cy="625" rx="180" ry="232"/>
+    </clipPath>
+
+    <!-- Warm ambient halo behind the fruit. -->
+    <filter id="photo-warm-halo" x="-60%" y="-60%"
+            width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="38"/>
     </filter>
   </defs>
 
-  <!-- Soft halo glow behind the fruit -->
-  <ellipse cx="320" cy="560" rx="320" ry="330" fill="#FFD700" opacity="0.16"/>
-  <ellipse cx="320" cy="560" rx="240" ry="260" fill="#FFE27A" opacity="0.26"/>
-
-  <!-- ===== Crown leaves — every leaf anchors at (320, 360) ===== -->
-  <!-- Back row -->
-  <g filter="url(#drop)">
-    <path d="M 320 360 Q 188 200 122 70 Q 218 232 286 358 Z" fill="url(#leaf-back)"/>
-    <path d="M 320 360 Q 452 200 518 70 Q 422 232 354 358 Z" fill="url(#leaf-back)"/>
-    <path d="M 320 360 Q 232 168 196 28 Q 264 198 300 358 Z" fill="url(#leaf-back)"/>
-    <path d="M 320 360 Q 408 168 444 28 Q 376 198 340 358 Z" fill="url(#leaf-back)"/>
-  </g>
-  <!-- Mid row -->
-  <g>
-    <path d="M 320 360 Q 248 168 232 18 Q 288 198 308 358 Z" fill="url(#leaf-mid)"/>
-    <path d="M 320 360 Q 392 168 408 18 Q 352 198 332 358 Z" fill="url(#leaf-mid)"/>
-    <path d="M 320 360 Q 282 144 280 0   Q 304 184 312 358 Z" fill="url(#leaf-mid)"/>
-    <path d="M 320 360 Q 358 144 360 0   Q 336 184 328 358 Z" fill="url(#leaf-mid)"/>
-  </g>
-  <!-- Front row + central blade with highlight -->
-  <g>
-    <path d="M 320 360 Q 308 152 314 8  Q 322 168 318 358 Z" fill="url(#leaf-front)"/>
-    <path d="M 320 360 Q 332 152 326 8  Q 318 168 322 358 Z" fill="url(#leaf-front)" opacity="0.92"/>
-    <!-- specular highlight along central blade -->
-    <path d="M 320 350 Q 319 220 321 60" stroke="url(#leaf-spec)" stroke-width="3.4" fill="none" opacity="0.85"/>
-    <!-- subtle vein striations -->
-    <path d="M 320 320 Q 322 200 326 70"  stroke="#E8F5E9" stroke-width="1.8" fill="none" opacity="0.55"/>
-    <path d="M 304 330 Q 296 220 286 90"  stroke="#C8E6C9" stroke-width="1.4" fill="none" opacity="0.45"/>
-    <path d="M 336 330 Q 344 220 354 90"  stroke="#C8E6C9" stroke-width="1.4" fill="none" opacity="0.45"/>
+  <!-- Ambient warm glow that gives the fruit some context in the
+       dark hero panel. -->
+  <g filter="url(#photo-warm-halo)" opacity="0.55">
+    <ellipse cx="320" cy="540" rx="280" ry="320" fill="#C28C12" opacity="0.55"/>
+    <ellipse cx="320" cy="380" rx="170" ry="160" fill="#FFE066" opacity="0.55"/>
   </g>
 
-  <!-- ===== Pineapple body — shaded for 3D depth ===== -->
-  <g filter="url(#drop)">
-    <ellipse cx="320" cy="585" rx="240" ry="300" fill="url(#body3d)"
-             stroke="#5C3A1A" stroke-width="5"/>
+  <!-- The actual pineapple photograph, inlined as a base64 data URI.
+       Centered horizontally, sized to fill the hero slot, then
+       softened at the edges by the radial feather mask. -->
+  <image href="{PHOTO_URI}"
+         x="40" y="80" width="560" height="800"
+         preserveAspectRatio="xMidYMid meet"
+         mask="url(#photo-mask)"/>
+
+  <!-- Fibonacci spiral overlay — 8 (pink) → 13 (cyan) → 21 (yellow).
+       Clipped to the body ellipse so lines hug the photographed fruit. -->
+  <g clip-path="url(#photo-body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
   </g>
-  <!-- diamond-skin lattice clipped to fruit shape -->
-  <ellipse cx="320" cy="585" rx="234" ry="294" fill="url(#skin)" opacity="0.92"/>
-  <!-- ambient occlusion on the lower-right side -->
-  <ellipse cx="320" cy="585" rx="234" ry="294" fill="url(#body-shadow)"/>
-  <!-- broad specular highlight, top-left -->
-  <ellipse cx="232" cy="450" rx="120" ry="170" fill="url(#body-spec)"/>
-  <!-- thin warm rim at the top -->
-  <path d="M 124 470 A 240 300 0 0 1 516 470" fill="none" stroke="url(#body-rim)" stroke-width="14" opacity="0.85"/>
-  <!-- under-shadow on the ground plane -->
-  <ellipse cx="320" cy="880" rx="200" ry="22" fill="#3B2A0A" opacity="0.22"/>
 </svg>
 """
+
+# ── Premium pineapple template — luxury botanical illustration ───
+# Pillowed-diamond scales with cylindrical warp, per-scale color
+# variation (row-biased green→gold→warm-brown), refined emerald→
+# teal crown with subtle asymmetry, warm-brown grout outlines,
+# luxury warm-gold background gradient, and the Fibonacci spiral
+# keyboard-pop animation (8 / 13 / 21) layered on top.
+_HERO_PINEAPPLE_SVG_PREMIUM_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── Per-variant scale fills + shared warm-brown grout ──── */
+    .hero-pineapple [class^="psc-"] {
+      stroke: #6B4A1A;
+      stroke-width: 0.55;
+      stroke-opacity: 0.55;
+      stroke-linejoin: round;
+    }
+    .hero-pineapple .psc-p0 { fill: url(#prem-p0); }
+    .hero-pineapple .psc-p1 { fill: url(#prem-p1); }
+    .hero-pineapple .psc-p2 { fill: url(#prem-p2); }
+    .hero-pineapple .psc-p3 { fill: url(#prem-p3); }
+    .hero-pineapple .psc-p4 { fill: url(#prem-p4); }
+    .hero-pineapple .psc-p5 { fill: url(#prem-p5); }
+    .hero-pineapple .psc-p6 { fill: url(#prem-p6); }
+    .hero-pineapple .psc-p7 { fill: url(#prem-p7); }
+
+    /* ── Fibonacci spiral KEYBOARD-POP animation overlay ──── */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 4px currentColor)
+              drop-shadow(0 0 10px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A; color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0; color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C; color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0; transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1; transform: translateY(0)    scale(1); }
+      95%  { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line { animation: none; opacity: 0.7; }
+    }
+  </style>
+  <defs>
+    <!-- ── Eight scale-fill gradients ─────────────────────────────
+         Each is a small radial gradient (offset slightly upper-left
+         to read as "light from above-left"), going from a pale
+         cream highlight through the variant's body color to a deep
+         warm-brown edge. Variants differ in saturation, hue
+         (olive vs. amber vs. honey), and brightness so the grid
+         never feels machine-generated. -->
+    <radialGradient id="prem-p0" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#FFE890"/>
+      <stop offset="22%"  stop-color="#F4C430"/>
+      <stop offset="60%"  stop-color="#C89318"/>
+      <stop offset="100%" stop-color="#5A3C14"/>
+    </radialGradient>
+    <radialGradient id="prem-p1" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#FFD978"/>
+      <stop offset="22%"  stop-color="#E8B838"/>
+      <stop offset="60%"  stop-color="#A8780A"/>
+      <stop offset="100%" stop-color="#4A3514"/>
+    </radialGradient>
+    <radialGradient id="prem-p2" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#E0B454"/>
+      <stop offset="22%"  stop-color="#B88B14"/>
+      <stop offset="60%"  stop-color="#7A5A14"/>
+      <stop offset="100%" stop-color="#3D2C18"/>
+    </radialGradient>
+    <radialGradient id="prem-p3" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#FFF3C8"/>
+      <stop offset="25%"  stop-color="#FFD978"/>
+      <stop offset="60%"  stop-color="#D4A018"/>
+      <stop offset="100%" stop-color="#5A4014"/>
+    </radialGradient>
+    <radialGradient id="prem-p4" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#E8E480"/>
+      <stop offset="22%"  stop-color="#C8B538"/>
+      <stop offset="55%"  stop-color="#8B8B20"/>
+      <stop offset="100%" stop-color="#4A4818"/>
+    </radialGradient>
+    <radialGradient id="prem-p5" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#D8A044"/>
+      <stop offset="25%"  stop-color="#A8780A"/>
+      <stop offset="60%"  stop-color="#5A4014"/>
+      <stop offset="100%" stop-color="#2D2010"/>
+    </radialGradient>
+    <radialGradient id="prem-p6" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#FFCE58"/>
+      <stop offset="22%"  stop-color="#D8A018"/>
+      <stop offset="60%"  stop-color="#8B6818"/>
+      <stop offset="100%" stop-color="#3D2C10"/>
+    </radialGradient>
+    <radialGradient id="prem-p7" cx="42%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#FFFAE0"/>
+      <stop offset="25%"  stop-color="#F4D060"/>
+      <stop offset="60%"  stop-color="#C89318"/>
+      <stop offset="100%" stop-color="#5A4014"/>
+    </radialGradient>
+
+    <!-- ── Body deep underbase (visible as grout color between
+         scales after they're drawn on top). -->
+    <radialGradient id="prem-body-deep" cx="50%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#7A5A1A"/>
+      <stop offset="55%"  stop-color="#4A3414"/>
+      <stop offset="100%" stop-color="#1F1408"/>
+    </radialGradient>
+
+    <!-- ── Cylindrical-depth wash layers ──────────────────────── -->
+    <radialGradient id="prem-top-wash" cx="50%" cy="14%" r="48%">
+      <stop offset="0%"   stop-color="#FFF5D0" stop-opacity="0.38"/>
+      <stop offset="55%"  stop-color="#FFE066" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FFE066" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="prem-bottom-wash" cx="50%" cy="94%" r="58%">
+      <stop offset="0%"   stop-color="#0F0A02" stop-opacity="0.55"/>
+      <stop offset="55%"  stop-color="#1F1408" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#1F1408" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="prem-side-shading" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%"   stop-color="#0A0604" stop-opacity="0.38"/>
+      <stop offset="14%"  stop-color="#0A0604" stop-opacity="0.16"/>
+      <stop offset="36%"  stop-color="#0A0604" stop-opacity="0"/>
+      <stop offset="64%"  stop-color="#0A0604" stop-opacity="0"/>
+      <stop offset="86%"  stop-color="#0A0604" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#0A0604" stop-opacity="0.38"/>
+    </linearGradient>
+
+    <!-- ── Luxury background gradient (warm radial backdrop) ───── -->
+    <radialGradient id="prem-lux-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%"   stop-color="#3D2C18" stop-opacity="0.55"/>
+      <stop offset="55%"  stop-color="#1A1108" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0A0604" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ── Crown leaf gradients (emerald → teal, three depths) ── -->
+    <linearGradient id="prem-leaf-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#B8FFD8"/>
+      <stop offset="20%"  stop-color="#5BD18C"/>
+      <stop offset="55%"  stop-color="#22A878"/>
+      <stop offset="85%"  stop-color="#0D7058"/>
+      <stop offset="100%" stop-color="#063D3A"/>
+    </linearGradient>
+    <linearGradient id="prem-leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#7DDDA8"/>
+      <stop offset="25%"  stop-color="#2DB078"/>
+      <stop offset="65%"  stop-color="#147858"/>
+      <stop offset="100%" stop-color="#053828"/>
+    </linearGradient>
+    <linearGradient id="prem-leaf-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#2DB078"/>
+      <stop offset="35%"  stop-color="#0D6858"/>
+      <stop offset="75%"  stop-color="#043828"/>
+      <stop offset="100%" stop-color="#01201A"/>
+    </linearGradient>
+
+    <!-- Soft warm halo behind the fruit. -->
+    <filter id="prem-warm-halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="36"/>
+    </filter>
+
+    <!-- Body silhouette (slight barrel: rounder middle, gentle
+         taper at the shoulder and base). -->
+    <path id="prem-body"
+          d="M 320 290
+             C 200 295, 92 400, 80 540
+             C 65 690, 100 838, 220 880
+             C 280 900, 360 900, 420 880
+             C 540 838, 575 690, 560 540
+             C 548 400, 440 295, 320 290 Z"/>
+    <clipPath id="prem-body-clip"><use href="#prem-body"/></clipPath>
+  </defs>
+
+  <!-- ===== LUXURY BACKGROUND ===== -->
+  <rect x="0" y="0" width="640" height="920" fill="url(#prem-lux-bg)"/>
+
+  <!-- Warm golden ambient halo behind the fruit. -->
+  <g filter="url(#prem-warm-halo)" opacity="0.55">
+    <ellipse cx="320" cy="560" rx="280" ry="320" fill="#C28C12" opacity="0.6"/>
+    <ellipse cx="320" cy="380" rx="170" ry="155" fill="#FFD060" opacity="0.55"/>
+  </g>
+
+  <!-- ===== CROWN — long sharp geometric leaves, asymmetric ===== -->
+  <g class="hero-crown">
+    <!-- BACK layer: deepest, longest, widest spread -->
+    <g stroke="#01201A" stroke-width="0.6" stroke-linejoin="round">
+      <path d="M 320 358 L 70 132 L 96 178 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.93"/>
+      <path d="M 320 358 L 570 132 L 544 178 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.93"/>
+      <path d="M 320 358 L 116 64 L 148 108 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.95"/>
+      <path d="M 320 358 L 524 64 L 492 108 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.95"/>
+      <path d="M 320 358 L 198 22 L 232 70 L 320 358 Z" fill="url(#prem-leaf-deep)"/>
+      <path d="M 320 358 L 442 22 L 408 70 L 320 358 Z" fill="url(#prem-leaf-deep)"/>
+      <path d="M 320 358 L 80 232 L 108 262 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.88"/>
+      <path d="M 320 358 L 560 232 L 532 262 L 320 358 Z" fill="url(#prem-leaf-deep)" opacity="0.88"/>
+    </g>
+    <!-- MID layer: shorter, brighter, fills the front -->
+    <g stroke="#053828" stroke-width="0.6" stroke-linejoin="round">
+      <path d="M 320 358 L 152 78 L 180 124 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <path d="M 320 358 L 488 78 L 460 124 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <path d="M 320 358 L 232 34 L 262 76 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <path d="M 320 358 L 408 34 L 378 76 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <path d="M 320 358 L 268 16 L 296 56 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <path d="M 320 358 L 372 16 L 344 56 L 320 358 Z" fill="url(#prem-leaf-mid)"/>
+      <!-- subtle asymmetry: lightly tilted side leaves -->
+      <path d="M 320 358 L 188 110 L 218 152 L 320 358 Z" fill="url(#prem-leaf-mid)" opacity="0.9"/>
+      <path d="M 320 358 L 452 110 L 422 152 L 320 358 Z" fill="url(#prem-leaf-mid)" opacity="0.9"/>
+    </g>
+    <!-- FRONT layer: brightest emerald centerpieces -->
+    <g stroke="#063D3A" stroke-width="0.6" stroke-linejoin="round">
+      <path d="M 320 358 L 318 -2 L 332 56 L 320 358 Z" fill="url(#prem-leaf-bright)"/>
+      <path d="M 320 358 L 322 -2 L 308 56 L 320 358 Z" fill="url(#prem-leaf-bright)"/>
+      <path d="M 320 358 L 302 14 L 326 58 L 320 358 Z" fill="url(#prem-leaf-bright)" opacity="0.96"/>
+      <path d="M 320 358 L 338 14 L 314 58 L 320 358 Z" fill="url(#prem-leaf-bright)" opacity="0.96"/>
+    </g>
+    <!-- Subtle bright spine highlights on the front leaves -->
+    <g fill="none" stroke="#B8FFD8" stroke-width="0.9" stroke-linecap="round" opacity="0.55">
+      <path d="M 320 6 L 320 220"/>
+      <path d="M 312 18 L 296 220"/>
+      <path d="M 328 18 L 344 220"/>
+    </g>
+  </g>
+
+  <!-- ===== PINEAPPLE BODY ===== -->
+  <!-- Deep warm underbase shows through between scales as the
+       warm-brown "grout" of the eye lattice. -->
+  <use href="#prem-body" fill="url(#prem-body-deep)"
+       stroke="#2D2010" stroke-width="2.2" stroke-opacity="0.95"/>
+
+  <!-- Premium pillowed-diamond scales, color-varied, warped. -->
+  <g clip-path="url(#prem-body-clip)">
+        {SCALES}
+  </g>
+
+  <!-- ===== CYLINDRICAL DEPTH PASSES (subtle, layered) ===== -->
+  <!-- Top-light wash: cool cream highlight along the upper shoulder -->
+  <g clip-path="url(#prem-body-clip)">
+    <ellipse cx="320" cy="330" rx="240" ry="210" fill="url(#prem-top-wash)"/>
+  </g>
+  <!-- Side shading: dark left/right vignette → cylindrical roundness -->
+  <g clip-path="url(#prem-body-clip)">
+    <rect x="0" y="0" width="640" height="920" fill="url(#prem-side-shading)"/>
+  </g>
+  <!-- Bottom shadow: warm dark fade at the base -->
+  <g clip-path="url(#prem-body-clip)">
+    <ellipse cx="320" cy="855" rx="280" ry="130" fill="url(#prem-bottom-wash)"/>
+  </g>
+
+  <!-- ===== FIBONACCI SPIRAL OVERLAY (keyboard-pop animation) ===== -->
+  <g clip-path="url(#prem-body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
+  </g>
+
+  <!-- Final crisp body outline for a clean rim. -->
+  <use href="#prem-body" fill="none"
+       stroke="#1F1408" stroke-width="2.4" stroke-opacity="0.9"/>
+</svg>
+"""
+
+_HERO_PINEAPPLE_SVG_PREMIUM = (
+    _HERO_PINEAPPLE_SVG_PREMIUM_TEMPLATE
+    .replace("{SCALES}", _PINEAPPLE_PREMIUM_SKIN_HTML)
+    .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_HTML)
+)
+
+
+# ── Premium GLASS pineapple template — translucent 3D crystal ────
+# Same body silhouette, warp, lattice, and crown shape as the
+# premium variant, but every scale becomes a translucent amber
+# facet with an interior gem-cut cross, a specular glint, and a
+# luminous gold edge. Crown leaves render as translucent emerald
+# crystal. Body backdrop has an internal warm glow you can see
+# through the facets. Fibonacci spiral animation overlaid on top.
+_HERO_PINEAPPLE_SVG_PREMIUM_GLASS_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── Translucent glass scales — fill driven by per-variant
+       gradient (each gradient stop carries its own opacity), all
+       sharing a warm bright-gold edge stroke so the seams read
+       as RAISED light-catching ridges, not sunken grout. */
+    .hero-pineapple [class^="gsc-g"] {
+      stroke: #FFE090;
+      stroke-width: 0.55;
+      stroke-opacity: 0.85;
+      stroke-linejoin: round;
+    }
+    .hero-pineapple .gsc-g0 { fill: url(#glass-g0); }
+    .hero-pineapple .gsc-g1 { fill: url(#glass-g1); }
+    .hero-pineapple .gsc-g2 { fill: url(#glass-g2); }
+    .hero-pineapple .gsc-g3 { fill: url(#glass-g3); }
+    .hero-pineapple .gsc-g5 { fill: url(#glass-g5); }
+    .hero-pineapple .gsc-g6 { fill: url(#glass-g6); }
+    .hero-pineapple .gsc-g7 { fill: url(#glass-g7); }
+
+    /* Interior facet cross — pale-gold strokes, subtle. */
+    .hero-pineapple .gsc-facet {
+      stroke: #FFF0B8;
+      stroke-width: 0.5;
+      stroke-opacity: 0.32;
+      stroke-linecap: round;
+      pointer-events: none;
+    }
+
+    /* Specular glints — bright white ellipses with a slight halo. */
+    .hero-pineapple .gsc-glint {
+      fill: #FFFFFF;
+      fill-opacity: 0.78;
+      filter: drop-shadow(0 0 1.2px rgba(255,255,255,0.7));
+      pointer-events: none;
+    }
+
+    /* Translucent crystal crown — fill opacity makes the leaves
+       feel like emerald glass overlapping itself. */
+    .hero-pineapple .glass-leaf {
+      fill-opacity: 0.72;
+    }
+    .hero-pineapple .glass-leaf-front {
+      fill-opacity: 0.82;
+    }
+
+    /* ── Fibonacci spiral KEYBOARD-POP animation overlay ──── */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 4px currentColor)
+              drop-shadow(0 0 10px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A; color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0; color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C; color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0; transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1; transform: translateY(0)    scale(1); }
+      95%  { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line { animation: none; opacity: 0.7; }
+    }
+  </style>
+  <defs>
+    <!-- ── Translucent amber glass gradients (7 variants) ───────
+         Each stop carries its own opacity so the warm body
+         underbase shows through every scale. Hot cream highlight
+         at the upper-left → bright amber → deep honey edge. -->
+    <radialGradient id="glass-g0" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#FFFAE0" stop-opacity="0.96"/>
+      <stop offset="22%"  stop-color="#F4CE48" stop-opacity="0.86"/>
+      <stop offset="60%"  stop-color="#D8990A" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#6B4A0A" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g1" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#FFEFB0" stop-opacity="0.94"/>
+      <stop offset="22%"  stop-color="#E8BC38" stop-opacity="0.82"/>
+      <stop offset="60%"  stop-color="#B07810" stop-opacity="0.70"/>
+      <stop offset="100%" stop-color="#5A3C0C" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g2" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#E8C470" stop-opacity="0.92"/>
+      <stop offset="22%"  stop-color="#B88B14" stop-opacity="0.80"/>
+      <stop offset="60%"  stop-color="#7A5810" stop-opacity="0.68"/>
+      <stop offset="100%" stop-color="#3D2A08" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g3" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#FFFFE8" stop-opacity="0.98"/>
+      <stop offset="25%"  stop-color="#FFE078" stop-opacity="0.86"/>
+      <stop offset="60%"  stop-color="#D8A018" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#5A3C0C" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g5" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#E0AC50" stop-opacity="0.92"/>
+      <stop offset="22%"  stop-color="#B07810" stop-opacity="0.78"/>
+      <stop offset="60%"  stop-color="#5A3C0A" stop-opacity="0.66"/>
+      <stop offset="100%" stop-color="#2D1F08" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g6" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#FFD460" stop-opacity="0.95"/>
+      <stop offset="22%"  stop-color="#D8A018" stop-opacity="0.82"/>
+      <stop offset="60%"  stop-color="#8B6810" stop-opacity="0.68"/>
+      <stop offset="100%" stop-color="#3D2A08" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="glass-g7" cx="40%" cy="30%" r="64%">
+      <stop offset="0%"   stop-color="#FFFFFA" stop-opacity="0.98"/>
+      <stop offset="22%"  stop-color="#FFE078" stop-opacity="0.88"/>
+      <stop offset="60%"  stop-color="#C89318" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#5A3C0C" stop-opacity="0.55"/>
+    </radialGradient>
+
+    <!-- ── Body underbase: luminous amber core (internal glow). -->
+    <radialGradient id="glass-body-core" cx="50%" cy="40%" r="68%">
+      <stop offset="0%"   stop-color="#FFE066" stop-opacity="0.95"/>
+      <stop offset="40%"  stop-color="#D8A018" stop-opacity="0.85"/>
+      <stop offset="75%"  stop-color="#7A5410" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#2D1F08" stop-opacity="0.9"/>
+    </radialGradient>
+
+    <!-- Internal-glow blur (the warm radiance you see through
+         the facets when light passes through real glass). -->
+    <filter id="glass-internal-glow" x="-30%" y="-30%"
+            width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="22"/>
+    </filter>
+
+    <!-- ── Cylindrical depth washes (lighter for glass) ──────── -->
+    <radialGradient id="glass-top-wash" cx="50%" cy="14%" r="48%">
+      <stop offset="0%"   stop-color="#FFFFF0" stop-opacity="0.42"/>
+      <stop offset="55%"  stop-color="#FFE066" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#FFE066" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glass-bottom-wash" cx="50%" cy="94%" r="58%">
+      <stop offset="0%"   stop-color="#0F0A02" stop-opacity="0.42"/>
+      <stop offset="55%"  stop-color="#1F1408" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#1F1408" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass-side-shading" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%"   stop-color="#0A0604" stop-opacity="0.32"/>
+      <stop offset="14%"  stop-color="#0A0604" stop-opacity="0.12"/>
+      <stop offset="36%"  stop-color="#0A0604" stop-opacity="0"/>
+      <stop offset="64%"  stop-color="#0A0604" stop-opacity="0"/>
+      <stop offset="86%"  stop-color="#0A0604" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0A0604" stop-opacity="0.32"/>
+    </linearGradient>
+
+    <!-- ── Luxury cool-warm gradient background. -->
+    <radialGradient id="glass-lux-bg" cx="50%" cy="50%" r="72%">
+      <stop offset="0%"   stop-color="#3D2C18" stop-opacity="0.5"/>
+      <stop offset="55%"  stop-color="#1A1108" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0A0604" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ── Translucent emerald glass leaf gradients ──────────── -->
+    <linearGradient id="glass-leaf-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D0FFE8" stop-opacity="0.95"/>
+      <stop offset="22%"  stop-color="#60E098" stop-opacity="0.85"/>
+      <stop offset="60%"  stop-color="#22A878" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#0D5848" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="glass-leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#90EAB8" stop-opacity="0.88"/>
+      <stop offset="28%"  stop-color="#2DB078" stop-opacity="0.78"/>
+      <stop offset="65%"  stop-color="#147858" stop-opacity="0.66"/>
+      <stop offset="100%" stop-color="#053828" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="glass-leaf-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#40C088" stop-opacity="0.85"/>
+      <stop offset="35%"  stop-color="#147858" stop-opacity="0.70"/>
+      <stop offset="75%"  stop-color="#053828" stop-opacity="0.58"/>
+      <stop offset="100%" stop-color="#01201A" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- Soft warm halo behind the fruit. -->
+    <filter id="glass-warm-halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="40"/>
+    </filter>
+
+    <!-- Body silhouette (same as premium). -->
+    <path id="glass-body"
+          d="M 320 290
+             C 200 295, 92 400, 80 540
+             C 65 690, 100 838, 220 880
+             C 280 900, 360 900, 420 880
+             C 540 838, 575 690, 560 540
+             C 548 400, 440 295, 320 290 Z"/>
+    <clipPath id="glass-body-clip"><use href="#glass-body"/></clipPath>
+  </defs>
+
+  <!-- ===== LUXURY BACKGROUND ===== -->
+  <rect x="0" y="0" width="640" height="920" fill="url(#glass-lux-bg)"/>
+
+  <!-- Warm golden halo behind the fruit (transmitted-light look). -->
+  <g filter="url(#glass-warm-halo)" opacity="0.65">
+    <ellipse cx="320" cy="560" rx="290" ry="330" fill="#D49A0A" opacity="0.6"/>
+    <ellipse cx="320" cy="380" rx="180" ry="160" fill="#FFE066" opacity="0.65"/>
+  </g>
+
+  <!-- ===== CROWN — translucent emerald crystal leaves ===== -->
+  <g class="hero-crown">
+    <!-- BACK layer: deep translucent emerald, longest, widest -->
+    <g stroke="#053828" stroke-width="0.5" stroke-linejoin="round">
+      <path class="glass-leaf" d="M 320 358 L 70 132 L 96 178 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 570 132 L 544 178 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 116 64 L 148 108 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 524 64 L 492 108 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 198 22 L 232 70 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 442 22 L 408 70 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 80 232 L 108 262 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+      <path class="glass-leaf" d="M 320 358 L 560 232 L 532 262 L 320 358 Z" fill="url(#glass-leaf-deep)"/>
+    </g>
+    <!-- MID layer: brighter translucent emerald, shorter -->
+    <g stroke="#0D5848" stroke-width="0.5" stroke-linejoin="round">
+      <path class="glass-leaf" d="M 320 358 L 152 78 L 180 124 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 488 78 L 460 124 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 232 34 L 262 76 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 408 34 L 378 76 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 268 16 L 296 56 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 372 16 L 344 56 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 188 110 L 218 152 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+      <path class="glass-leaf" d="M 320 358 L 452 110 L 422 152 L 320 358 Z" fill="url(#glass-leaf-mid)"/>
+    </g>
+    <!-- FRONT layer: brightest translucent emerald centerpieces -->
+    <g stroke="#0D5848" stroke-width="0.5" stroke-linejoin="round">
+      <path class="glass-leaf-front" d="M 320 358 L 318 -2 L 332 56 L 320 358 Z" fill="url(#glass-leaf-bright)"/>
+      <path class="glass-leaf-front" d="M 320 358 L 322 -2 L 308 56 L 320 358 Z" fill="url(#glass-leaf-bright)"/>
+      <path class="glass-leaf-front" d="M 320 358 L 302 14 L 326 58 L 320 358 Z" fill="url(#glass-leaf-bright)"/>
+      <path class="glass-leaf-front" d="M 320 358 L 338 14 L 314 58 L 320 358 Z" fill="url(#glass-leaf-bright)"/>
+    </g>
+    <!-- Bright mint spine highlights (catch-the-light edge) -->
+    <g fill="none" stroke="#D0FFE8" stroke-width="1.0" stroke-linecap="round" opacity="0.7">
+      <path d="M 320 6 L 320 220"/>
+      <path d="M 312 18 L 296 220"/>
+      <path d="M 328 18 L 344 220"/>
+    </g>
+    <!-- Per-leaf tip glints — small white dots at each leaf tip -->
+    <g fill="#FFFFFF" fill-opacity="0.85">
+      <circle cx="320" cy="-2" r="1.6"/>
+      <circle cx="268" cy="16" r="1.4"/>
+      <circle cx="372" cy="16" r="1.4"/>
+      <circle cx="232" cy="34" r="1.3"/>
+      <circle cx="408" cy="34" r="1.3"/>
+      <circle cx="152" cy="78" r="1.2"/>
+      <circle cx="488" cy="78" r="1.2"/>
+    </g>
+  </g>
+
+  <!-- ===== GLASS BODY ===== -->
+  <!-- Luminous amber CORE — the internal light source the facets
+       refract. Heavily blurred so it reads as soft inner glow. -->
+  <g clip-path="url(#glass-body-clip)" filter="url(#glass-internal-glow)" opacity="0.9">
+    <use href="#glass-body" fill="url(#glass-body-core)"/>
+  </g>
+  <!-- Sharper underbase so the edges of the body are still defined. -->
+  <use href="#glass-body" fill="url(#glass-body-core)" opacity="0.55"/>
+
+  <!-- Per-scale translucent facets + interior cross + glints. -->
+  <g clip-path="url(#glass-body-clip)">
+        {SCALES}
+  </g>
+
+  <!-- ===== CYLINDRICAL DEPTH PASSES ===== -->
+  <g clip-path="url(#glass-body-clip)">
+    <ellipse cx="320" cy="330" rx="240" ry="210" fill="url(#glass-top-wash)"/>
+  </g>
+  <g clip-path="url(#glass-body-clip)">
+    <rect x="0" y="0" width="640" height="920" fill="url(#glass-side-shading)"/>
+  </g>
+  <g clip-path="url(#glass-body-clip)">
+    <ellipse cx="320" cy="855" rx="280" ry="130" fill="url(#glass-bottom-wash)"/>
+  </g>
+
+  <!-- A big specular streak across the upper-left of the body —
+       the way light hits a real glass sphere. -->
+  <g clip-path="url(#glass-body-clip)" opacity="0.55"
+     style="mix-blend-mode: screen">
+    <ellipse cx="220" cy="400" rx="120" ry="60" fill="#FFFAE0"
+             transform="rotate(-22 220 400)"/>
+  </g>
+
+  <!-- ===== FIBONACCI SPIRAL OVERLAY ===== -->
+  <g clip-path="url(#glass-body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
+  </g>
+
+  <!-- Crisp body rim. -->
+  <use href="#glass-body" fill="none"
+       stroke="#7A5A1A" stroke-width="2.0" stroke-opacity="0.85"/>
+</svg>
+"""
+
+_HERO_PINEAPPLE_SVG_PREMIUM_GLASS = (
+    _HERO_PINEAPPLE_SVG_PREMIUM_GLASS_TEMPLATE
+    .replace("{SCALES}", _PINEAPPLE_GLASS_SKIN_HTML)
+    .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_HTML)
+)
+
+
+# ── Photo-grade crystal pineapple, NO background ──────────────────
+# Pure SVG synthesis of the user's crystal-pineapple reference
+# image: every scale is built from 4 lit triangular facets (true
+# cut-gemstone topology with upper-left light), the body is a
+# warm translucent amber core, the crown is translucent emerald
+# blades, and the canvas is left fully transparent. Fibonacci
+# spiral keyboard-pop animation overlaid on top.
+_HERO_PINEAPPLE_SVG_GLASS_NOBG_TEMPLATE = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <style>
+    /* ── 4 facet shades for each scale (upper-left light) ──── */
+    .hero-pineapple .gv-ul { fill: url(#gv-amber-ul); }
+    .hero-pineapple .gv-ur { fill: url(#gv-amber-ur); }
+    .hero-pineapple .gv-ll { fill: url(#gv-amber-ll); }
+    .hero-pineapple .gv-lr { fill: url(#gv-amber-lr); }
+
+    /* ── Per-scale brightness tier (multiplies the facet color). */
+    .hero-pineapple .gv-t0 { fill-opacity: 0.95; }
+    .hero-pineapple .gv-t1 { fill-opacity: 0.82; }
+    .hero-pineapple .gv-t2 { fill-opacity: 0.68; }
+
+    /* Raised gold perimeter ridge between scales. */
+    .hero-pineapple .gv-edge {
+      fill: none;
+      stroke: #C89318;
+      stroke-width: 0.55;
+      stroke-opacity: 0.7;
+      stroke-linejoin: round;
+    }
+
+    /* Specular glints at scale peaks. */
+    .hero-pineapple .gv-glint {
+      fill: #FFFFFF;
+      fill-opacity: 0.85;
+      filter: drop-shadow(0 0 1.4px rgba(255,255,255,0.7));
+      pointer-events: none;
+    }
+
+    /* Translucent emerald glass crown. */
+    .hero-pineapple .gv-leaf       { fill-opacity: 0.78; }
+    .hero-pineapple .gv-leaf-front { fill-opacity: 0.88; }
+
+    /* ── Fibonacci spiral KEYBOARD-POP animation overlay ──── */
+    .hero-pineapple .spiral-line {
+      fill: none;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 0 4px currentColor)
+              drop-shadow(0 0 10px currentColor);
+    }
+    .hero-pineapple .spiral-f8 {
+      stroke: #FF3D8A; color: #FF3D8A;
+      animation: spiralKeyPop8 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f13 {
+      stroke: #18E5F0; color: #18E5F0;
+      animation: spiralKeyPop13 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .hero-pineapple .spiral-f21 {
+      stroke: #FFE74C; color: #FFE74C;
+      animation: spiralKeyPop21 9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes spiralKeyPop8 {
+      0%   { opacity: 0; transform: translateY(14px) scale(0.92); }
+      7%   { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      14%  { opacity: 1; transform: translateY(0)    scale(1); }
+      95%  { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop13 {
+      0%, 33% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      40%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      47%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @keyframes spiralKeyPop21 {
+      0%, 66% { opacity: 0; transform: translateY(14px) scale(0.92); }
+      73%     { opacity: 1; transform: translateY(-5px) scale(1.06); }
+      80%     { opacity: 1; transform: translateY(0)    scale(1); }
+      95%     { opacity: 1; transform: translateY(0)    scale(1); }
+      100%    { opacity: 0; transform: translateY(14px) scale(0.92); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-pineapple .spiral-line { animation: none; opacity: 0.7; }
+    }
+  </style>
+  <defs>
+    <!-- ── Per-facet amber gradients ─────────────────────────────
+         Each facet is a small linear gradient running from the
+         scale center outward (the "ridge" → the "valley"), so the
+         pyramid shape reads correctly. Brightness ranks: UL > UR
+         > LL > LR (upper-left light). -->
+    <linearGradient id="gv-amber-ul" x1="1" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#7A5410" stop-opacity="0.85"/>
+      <stop offset="55%"  stop-color="#F4C430" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FFFAE0" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="gv-amber-ur" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#5A3C0A" stop-opacity="0.85"/>
+      <stop offset="55%"  stop-color="#D8A018" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FFE078" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="gv-amber-ll" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#3D2A08" stop-opacity="0.85"/>
+      <stop offset="55%"  stop-color="#A8780A" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#D8A018" stop-opacity="0.90"/>
+    </linearGradient>
+    <linearGradient id="gv-amber-lr" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#2D1F08" stop-opacity="0.88"/>
+      <stop offset="55%"  stop-color="#7A5410" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#A8780A" stop-opacity="0.82"/>
+    </linearGradient>
+
+    <!-- ── Body warm amber core (the internal glow visible
+         through every translucent facet). -->
+    <radialGradient id="gv-body-core" cx="42%" cy="34%" r="68%">
+      <stop offset="0%"   stop-color="#FFE680" stop-opacity="0.95"/>
+      <stop offset="35%"  stop-color="#E8B838" stop-opacity="0.92"/>
+      <stop offset="68%"  stop-color="#A8780A" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#3D2A08" stop-opacity="0.92"/>
+    </radialGradient>
+
+    <!-- ── Translucent emerald crown gradients ───────────────── -->
+    <linearGradient id="gv-leaf-bright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D8FFE8" stop-opacity="0.95"/>
+      <stop offset="22%"  stop-color="#60E098" stop-opacity="0.88"/>
+      <stop offset="60%"  stop-color="#22A878" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#0D5848" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="gv-leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#90EAB8" stop-opacity="0.9"/>
+      <stop offset="28%"  stop-color="#2DB078" stop-opacity="0.8"/>
+      <stop offset="65%"  stop-color="#147858" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#053828" stop-opacity="0.62"/>
+    </linearGradient>
+    <linearGradient id="gv-leaf-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#40C088" stop-opacity="0.88"/>
+      <stop offset="35%"  stop-color="#147858" stop-opacity="0.74"/>
+      <stop offset="75%"  stop-color="#053828" stop-opacity="0.62"/>
+      <stop offset="100%" stop-color="#01201A" stop-opacity="0.55"/>
+    </linearGradient>
+
+    <!-- Body silhouette (same as premium). -->
+    <path id="gv-body"
+          d="M 320 290
+             C 200 295, 92 400, 80 540
+             C 65 690, 100 838, 220 880
+             C 280 900, 360 900, 420 880
+             C 540 838, 575 690, 560 540
+             C 548 400, 440 295, 320 290 Z"/>
+    <clipPath id="gv-body-clip"><use href="#gv-body"/></clipPath>
+  </defs>
+
+  <!-- NO BACKGROUND — canvas stays transparent. -->
+
+  <!-- ===== CROWN — translucent emerald crystal blades ===== -->
+  <g class="hero-crown">
+    <g stroke="#053828" stroke-width="0.5" stroke-linejoin="round">
+      <path class="gv-leaf" d="M 320 358 L 70 132 L 96 178 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 570 132 L 544 178 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 116 64 L 148 108 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 524 64 L 492 108 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 198 22 L 232 70 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 442 22 L 408 70 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 80 232 L 108 262 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+      <path class="gv-leaf" d="M 320 358 L 560 232 L 532 262 L 320 358 Z" fill="url(#gv-leaf-deep)"/>
+    </g>
+    <g stroke="#0D5848" stroke-width="0.5" stroke-linejoin="round">
+      <path class="gv-leaf" d="M 320 358 L 152 78 L 180 124 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 488 78 L 460 124 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 232 34 L 262 76 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 408 34 L 378 76 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 268 16 L 296 56 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 372 16 L 344 56 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 188 110 L 218 152 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+      <path class="gv-leaf" d="M 320 358 L 452 110 L 422 152 L 320 358 Z" fill="url(#gv-leaf-mid)"/>
+    </g>
+    <g stroke="#0D5848" stroke-width="0.5" stroke-linejoin="round">
+      <path class="gv-leaf-front" d="M 320 358 L 318 -2 L 332 56 L 320 358 Z" fill="url(#gv-leaf-bright)"/>
+      <path class="gv-leaf-front" d="M 320 358 L 322 -2 L 308 56 L 320 358 Z" fill="url(#gv-leaf-bright)"/>
+      <path class="gv-leaf-front" d="M 320 358 L 302 14 L 326 58 L 320 358 Z" fill="url(#gv-leaf-bright)"/>
+      <path class="gv-leaf-front" d="M 320 358 L 338 14 L 314 58 L 320 358 Z" fill="url(#gv-leaf-bright)"/>
+    </g>
+    <!-- Bright mint spine highlights -->
+    <g fill="none" stroke="#D8FFE8" stroke-width="1.0" stroke-linecap="round" opacity="0.75">
+      <path d="M 320 6 L 320 220"/>
+      <path d="M 312 18 L 296 220"/>
+      <path d="M 328 18 L 344 220"/>
+    </g>
+    <!-- Per-leaf tip glints -->
+    <g fill="#FFFFFF" fill-opacity="0.85">
+      <circle cx="320" cy="-2" r="1.7"/>
+      <circle cx="268" cy="16" r="1.5"/>
+      <circle cx="372" cy="16" r="1.5"/>
+      <circle cx="232" cy="34" r="1.4"/>
+      <circle cx="408" cy="34" r="1.4"/>
+      <circle cx="152" cy="78" r="1.3"/>
+      <circle cx="488" cy="78" r="1.3"/>
+    </g>
+  </g>
+
+  <!-- ===== GLASS BODY ===== -->
+  <!-- Warm amber core — the internal glow you see through every
+       translucent facet. Drawn once at full opacity as the body
+       backdrop. -->
+  <use href="#gv-body" fill="url(#gv-body-core)"/>
+
+  <!-- Per-scale 4-facet pyramids + perimeter ridges + glints. -->
+  <g clip-path="url(#gv-body-clip)">
+        {SCALES}
+  </g>
+
+  <!-- Big specular sweep across the upper-left of the body
+       (the broad light reflection you see on a real glass sphere). -->
+  <g clip-path="url(#gv-body-clip)" opacity="0.55"
+     style="mix-blend-mode: screen">
+    <ellipse cx="220" cy="430" rx="130" ry="62" fill="#FFFAE0"
+             transform="rotate(-22 220 430)"/>
+  </g>
+
+  <!-- ===== FIBONACCI SPIRAL OVERLAY ===== -->
+  <g clip-path="url(#gv-body-clip)">
+    <g class="pineapple-fibonacci-spirals">
+        {SPIRALS}
+    </g>
+  </g>
+
+  <!-- Crisp body rim (subtle, warm). -->
+  <use href="#gv-body" fill="none"
+       stroke="#7A5A1A" stroke-width="1.8" stroke-opacity="0.85"/>
+</svg>
+"""
+
+_HERO_PINEAPPLE_SVG_GLASS_NOBG = (
+    _HERO_PINEAPPLE_SVG_GLASS_NOBG_TEMPLATE
+    .replace("{SCALES}", _PINEAPPLE_GLASS_V2_SKIN_HTML)
+    .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_HTML)
+)
+
+
+# Literal-photograph variant (current crop: the crystal pineapple
+# sculpture) with the Fibonacci spiral keyboard-pop overlay aligned
+# to the photographed fruit body.
+_HERO_PINEAPPLE_SVG_PHOTO = (
+    _HERO_PINEAPPLE_SVG_PHOTO_TEMPLATE
+    .replace("{PHOTO_URI}", _PINEAPPLE_PHOTO_DATA_URI)
+    .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_PHOTO_HTML)
+)
+
+# ── Active design: AI-generated faceted-crystal PNG render ───────
+# Per the user's "premium faceted crystal pineapple" prompt, we
+# now ship the photoreal Octane/Redshift-style render (tessellated
+# diamond-lattice gold body + emerald crystal crown + studio HDRI
+# lighting) inlined as a base64 PNG. Falls back to the legacy SVG
+# synthesis if the asset file isn't present at build time.
+HERO_PINEAPPLE_SVG = (
+    _HERO_PINEAPPLE_IMG_CRYSTAL_RENDER
+    if _CRYSTAL_PINEAPPLE_RENDER_DATA_URI
+    else _HERO_PINEAPPLE_SVG_GLASS_NOBG
+)
 
 
 LANG_COLORS = {
@@ -3533,7 +7067,12 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         tab_ids.append("database")
         tab_labels["database"] = "Database"
     tab_ids += ["security", "suggestions", "pitch", "simulation"]
-    tab_labels.update({"security": "Security", "suggestions": "Suggestions", "pitch": "Pitch", "simulation": "Simulation"})
+    tab_labels.update({
+        "security": "Security",
+        "suggestions": "Strategic Recommendations",
+        "pitch": "Idea Validation",
+        "simulation": "Future Outlook",
+    })
 
     tab_icons = {
         "overview": "📊", "product": "🛍️", "technical": "⚙️", "database": "🗄️",
@@ -3636,7 +7175,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         for n in pitch_numbers if isinstance(n, dict)
     )
 
-    # === Code Health Check: 4-tier scale (Health / Sick / Severe Sick / Death) ===
+    # === Code Health Check: 4-tier scale (Health / Sick / Critically Ill / Death Penalty) ===
     # Enrichment may use either the new 4-tier color tokens (`health`, `sick`,
     # `severe`, `death`) or the legacy 3-tier (`green`, `yellow`, `red`). We
     # map both to the same .traffic-* CSS classes; if the author also omits a
@@ -3644,16 +7183,16 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
     HEALTH_TIER_MAP = {
         "health": ("health", "Health"),
         "sick": ("sick", "Sick"),
-        "severe": ("severe", "Severe Sick"),
-        "severe-sick": ("severe", "Severe Sick"),
-        "severe_sick": ("severe", "Severe Sick"),
-        "death": ("death", "Death"),
+        "severe": ("severe", "Critically Ill"),
+        "severe-sick": ("severe", "Critically Ill"),
+        "severe_sick": ("severe", "Critically Ill"),
+        "death": ("death", "Death Penalty"),
         # Legacy
         "green": ("health", "Health"),
         "yellow": ("sick", "Sick"),
-        "orange": ("severe", "Severe Sick"),
-        "red": ("severe", "Severe Sick"),
-        "black": ("death", "Death"),
+        "orange": ("severe", "Critically Ill"),
+        "red": ("severe", "Critically Ill"),
+        "black": ("death", "Death Penalty"),
     }
     health_html = ""
     for h in tech_easy_health_items:
@@ -3678,8 +7217,8 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         '<span class="health-legend-label">Scale</span>'
         '<span class="traffic-light traffic-health">Health</span>'
         '<span class="traffic-light traffic-sick">Sick</span>'
-        '<span class="traffic-light traffic-severe">Severe Sick</span>'
-        '<span class="traffic-light traffic-death">Death</span>'
+        '<span class="traffic-light traffic-severe">Critically Ill</span>'
+        '<span class="traffic-light traffic-death">Death Penalty</span>'
         '</div>'
     )
 
@@ -3718,6 +7257,12 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 </style>
 </head>
 <body>
+<div class="tropical-top-banner" aria-hidden="true">
+  <div class="tropical-top-banner-wave" aria-hidden="true"></div>
+  <span class="tropical-top-banner-emoji">
+    🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭 🌞 🍹 🌿 🍍 🌴 🌺 🥭
+  </span>
+</div>
 <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">&#9776;</button>
 <div class="app-layout">
   <!-- === SIDEBAR === -->
@@ -3745,18 +7290,24 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
            which is the only place the codebase name appears at the top
            of the page. -->
 
+      <section class="team-intro-banner" aria-labelledby="team-banner-heading">
+        <div class="team-banner-title-cell">
+          <h2 id="team-banner-heading" class="team-banner-title">The Pineapple Project</h2>
+        </div>
+        <p class="team-banner-body">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
+      </section>
+
       <div class="hero">
         <!-- Left of the pineapple: EVERGREEN content that stays the same
              on every visualization this skill produces. Title + tagline
              sit directly on the hero background (un-boxed). -->
         <div class="hero-content">
           <div class="hero-evergreen">
-            <h1 class="hero-evergreen-title">Pineapple Code Cartography
-              <button class="tooltip-trigger" type="button"
-                data-tooltip="Use the tab bar to change view, or press 1-{len(tab_ids)} to jump between tabs."
-                aria-label="How to use this visualization">?</button>
+            <h1 class="hero-evergreen-title">
+              <span class="hero-title-main"><span>Pineapple</span> <span class="hero-title-num">48414</span></span>
+              <span class="hero-title-sub">Codebase Almanac</span>
             </h1>
-            <p class="hero-evergreen-body">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
+            <p class="hero-evergreen-body">This is a skill that streamlines the &quot;vibe-coding&quot; experience by providing a clear visual map of your codebase to assemble contexts by offering actionable insights and intelligent suggestions for product features, architectural improvements, security risks, databases, and the idea validation process.</p>
           </div>
         </div>
         <div class="hero-art">{HERO_PINEAPPLE_SVG}</div>
@@ -3902,7 +7453,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 
         <h2>Code health check</h2>
         {health_legend_html}
-        {health_html or '<p data-searchable>[AI_FILL: Code health check \u2014 four-tier ratings (Health / Sick / Severe Sick / Death) for organization, complexity, consistency, size]</p>'}
+        {health_html or '<p data-searchable>[AI_FILL: Code health check \u2014 four-tier ratings (Health / Sick / Critically Ill / Death Penalty) for organization, complexity, consistency, size]</p>'}
       </div>
     </section>
 
@@ -4112,7 +7663,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 </div>
 
 <aside class="credits" aria-label="Credits">
-  <div class="credits-line credits-team">designed by the <strong>PineApple Team</strong></div>
+  <div class="credits-line credits-team">Designed by the <strong>Pineapple Team</strong></div>
   <div class="credits-line">
     <span class="credits-handle">@HenryZou</span>
     <a class="credits-link" href="https://www.linkedin.com/in/cunhanzou/" target="_blank" rel="noopener noreferrer"
@@ -4324,6 +7875,11 @@ def main() -> None:
     parser.add_argument("title", nargs="?", default=None, help="Custom page title")
     parser.add_argument("project_name", nargs="?", default=None, help="Override project name")
     parser.add_argument("--enrichment", default=None, help="Path to enrichment.json from AI Phase 3")
+    parser.add_argument(
+        "--no-open",
+        action="store_true",
+        help="Do not open the output HTML after generation (CI / headless).",
+    )
     args = parser.parse_args()
 
     analysis_path = Path(args.analysis).resolve()
@@ -4332,6 +7888,8 @@ def main() -> None:
     generate(analysis_path, output_path, args.title, args.project_name, enrichment_path)
     size_kb = output_path.stat().st_size // 1024
     print(f"generated {output_path} ({size_kb} KB)")
+    if not args.no_open:
+        _open_generated_html(output_path)
 
 
 if __name__ == "__main__":
