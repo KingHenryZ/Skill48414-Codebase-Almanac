@@ -941,10 +941,10 @@ code {
 .hero {
   position: relative;
   isolation: isolate;
-  margin: -8px -32px 28px;
+  margin: -28px -32px 0;
   padding: clamp(40px, 6vw, 80px) clamp(32px, 6vw, 84px) clamp(52px, 7vw, 96px);
   min-height: 460px;
-  border-radius: 22px 22px 28px 28px;
+  border-radius: 0 0 0 0;
   overflow: hidden;
   background:
     radial-gradient(ellipse 50% 70% at 8% 40%, rgba(255, 215, 0, 0.38) 0%, transparent 60%),
@@ -988,6 +988,7 @@ code {
   max-width: 640px;
   padding-right: 20px;
   text-align: left;
+  align-self: stretch;
 }
 .hero-eyebrow {
   display: inline-block;
@@ -1046,51 +1047,37 @@ code {
 }
 
 .hero-art {
-  /* Batch 6: pineapple owns the WHOLE right side of the hero (~2/3 of
-     the hero width), like the original "pineapple-as-hero" iteration,
-     while still rendering the entire fruit (crown + body) thanks to
-     `object-fit: contain` on the SVG. We slot the container against the
-     right edge with very small safe gutters and let the SVG's natural
-     aspect ratio keep the crown vertical. */
   position: absolute;
-  top: clamp(8px, 1.5%, 24px);
-  right: clamp(-12px, 0vw, 16px);
-  bottom: clamp(8px, 1.5%, 24px);
-  width: clamp(420px, 56%, 760px);
-  max-height: calc(100% - clamp(16px, 3%, 48px));
+  top: -42px;
+  right: clamp(-220px, -14vw, -120px);
+  width: clamp(520px, 68%, 860px);
+  height: auto;
   z-index: 1;
   pointer-events: none;
-  transform: rotate(2deg);
-  /* Ground shadow + warm gold / emerald outer glow around the pineapple */
-  filter:
-    drop-shadow(0 28px 42px rgba(139, 90, 43, 0.34))
-    drop-shadow(0 0 18px rgba(255, 206, 120, 0.55))
-    drop-shadow(0 0 40px rgba(255, 230, 180, 0.32))
-    drop-shadow(0 0 28px rgba(76, 175, 95, 0.22))
-    drop-shadow(0 -4px 24px rgba(255, 255, 245, 0.12));
-  animation: heroFloat 9s ease-in-out infinite;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  transform: rotate(6deg);
+  filter: drop-shadow(0 30px 46px rgba(139, 90, 43, 0.35));
+  animation: none;
 }
 .hero-pineapple {
   width: 100%;
-  height: 100%;
-  max-height: 100%;
+  height: auto;
   display: block;
-  /* `contain` keeps the entire SVG visible regardless of how big the
-     hero-art frame grows — no clipping at any viewport. */
-  object-fit: contain;
-  object-position: calc(100% - clamp(24px, 4vw, 56px)) center;
 }
 @keyframes heroFloat {
-  0%, 100% { transform: rotate(2deg) translateY(0); }
-  50%      { transform: rotate(1deg) translateY(-12px); }
+  0%, 100% { transform: rotate(6deg) translateY(0); }
+  50%      { transform: rotate(5deg) translateY(-14px); }
 }
 
-/* The legacy .hero-leaf decorations are removed in batch 3; rules retained
-   below as `display: none` in case any downstream theme still emits them. */
-.hero-leaf { display: none !important; }
+/* Decorative overlapping floating leaves poking over content */
+.hero-leaf {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 6px 10px rgba(46, 125, 50, 0.35));
+  display: none;
+}
+.hero-leaf.one   { top: 20px;   left: 44%; width: 90px;  transform: rotate(-18deg); opacity: 0.9; }
+.hero-leaf.two   { bottom: 60px; left: 36%; width: 70px; transform: rotate(28deg); opacity: 0.85; }
 
 /* === Evergreen hero block (left of pineapple) ======================
    Batch 4: no boxes. The evergreen title + tagline sit directly on the
@@ -1103,6 +1090,9 @@ code {
   border: 0;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .hero-evergreen-title {
   font-size: clamp(2rem, 4vw, 3.2rem) !important;
@@ -1130,8 +1120,7 @@ code {
   text-shadow: none;
 }
 .hero-title-main {
-  font-family: "Inter", system-ui, -apple-system, "Segoe UI", "Montserrat",
-               sans-serif;
+  font-family: var(--font-heading);
   font-weight: 800;
   font-style: normal;
   font-size: 1em;
@@ -1180,6 +1169,29 @@ code {
 .hero-evergreen .hero-evergreen-body + .hero-evergreen-body {
   margin-top: 0.85em;
 }
+.hero-team-section {
+  margin-top: auto;
+  padding-top: 18px;
+}
+.hero-team-subtitle {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--leaf-deep);
+  opacity: 0.7;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+.hero-team-intro {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 56ch;
+  opacity: 0.85;
+}
 /* Legacy class fallbacks (kept so old rules don't suddenly mismatch). */
 .hero-tbd-block { all: unset; display: block; }
 .hero-tbd-tag,
@@ -1200,9 +1212,9 @@ code {
 /* === Codebase intro card (below hero, codebase-specific name + summary) === */
 .codebase-card {
   position: relative;
-  margin: 28px auto 32px;
+  margin: 0 auto 32px;
   padding: 4px;
-  border-radius: 28px;
+  border-radius: 0 0 28px 28px;
   background: linear-gradient(135deg,
     #FFD700 0%,
     #F4A300 35%,
@@ -1314,25 +1326,19 @@ code {
   .hero {
     grid-template-columns: 1fr;
     min-height: auto;
-    padding: 36px 28px clamp(280px, 60vw, 360px);
+    padding: 36px 28px 200px;
   }
   .hero-art {
-    /* Below the text, fully visible, slightly larger so it carries the
-       layout when there's nothing to the right. */
     top: auto;
-    bottom: 16px;
-    right: 50%;
-    transform: translateX(50%) rotate(2deg);
-    width: clamp(240px, 70vw, 360px);
-    max-height: clamp(240px, 60vw, 340px);
+    bottom: -120px;
+    right: -160px;
+    width: 420px;
+    transform: rotate(10deg);
   }
   .hero-leaf { display: none; }
 }
 @media (max-width: 600px) {
-  .hero-art {
-    width: clamp(200px, 80vw, 300px);
-    max-height: clamp(220px, 70vw, 300px);
-  }
+  .hero-art { width: 340px; right: -120px; bottom: -90px; }
 }
 
 /* ═══ BUTTONS ═══ */
@@ -4962,6 +4968,33 @@ def _load_crystal_pineapple_render_data_uri() -> str:
 
 _CRYSTAL_PINEAPPLE_RENDER_DATA_URI = _load_crystal_pineapple_render_data_uri()
 
+
+def _load_approved_pineapple_concept_data_uri() -> str:
+    """Load the user-approved concept PNG and inline as data URI.
+
+    Tries a repo-local assets path first, then the Cursor-generated asset path
+    used in this workspace session.
+    """
+    import base64
+    import os
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        os.path.join(repo_root, "assets", "pineapple-hero-concept-a-flat-minimal.png"),
+        "/Users/kinghenry/.cursor/projects/Users-kinghenry-Project48414/assets/pineapple-hero-concept-a-flat-minimal.png",
+    ]
+    for path in candidates:
+        try:
+            with open(path, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode("ascii")
+            return f"data:image/png;base64,{encoded}"
+        except FileNotFoundError:
+            continue
+    return ""
+
+
+_APPROVED_PINEAPPLE_CONCEPT_DATA_URI = _load_approved_pineapple_concept_data_uri()
+
 # Hero variant that drops the AI-generated faceted-crystal pineapple
 # render straight into the hero slot. Uses an <img> rather than an SVG
 # so the photoreal PBR detail (caustics, fresnel, internal glow) is
@@ -4973,6 +5006,12 @@ _HERO_PINEAPPLE_IMG_CRYSTAL_RENDER = (
     'src="{SRC}" alt="Faceted crystal pineapple" '
     'draggable="false" />'
 ).replace("{SRC}", _CRYSTAL_PINEAPPLE_RENDER_DATA_URI)
+
+_HERO_PINEAPPLE_IMG_APPROVED = (
+    '<img class="hero-pineapple hero-pineapple-approved" '
+    'src="{SRC}" alt="Approved pineapple concept" '
+    'draggable="false" />'
+).replace("{SRC}", _APPROVED_PINEAPPLE_CONCEPT_DATA_URI)
 
 # ── Active design: the actual pineapple photograph ───────────────
 # Per the user: "take exactly the picture of the pineapple skin".
@@ -5985,17 +6024,168 @@ _HERO_PINEAPPLE_SVG_PHOTO = (
     .replace("{SPIRALS}", _PINEAPPLE_FIBONACCI_SPIRALS_PHOTO_HTML)
 )
 
-# ── Active design: AI-generated faceted-crystal PNG render ───────
-# Per the user's "premium faceted crystal pineapple" prompt, we
-# now ship the photoreal Octane/Redshift-style render (tessellated
-# diamond-lattice gold body + emerald crystal crown + studio HDRI
-# lighting) inlined as a base64 PNG. Falls back to the legacy SVG
-# synthesis if the asset file isn't present at build time.
-HERO_PINEAPPLE_SVG = (
-    _HERO_PINEAPPLE_IMG_CRYSTAL_RENDER
-    if _CRYSTAL_PINEAPPLE_RENDER_DATA_URI
-    else _HERO_PINEAPPLE_SVG_GLASS_NOBG
-)
+def _build_hero_pineapple_svg_flat_minimal() -> str:
+    """Concept A flat-minimal pineapple (design mockup style).
+
+    Flat gold body + 45° diamond grid, layered green crown. Body extends
+    below the viewBox; .hero / .hero-art overflow clips the lower third.
+    """
+    return """\
+<svg class="hero-pineapple" viewBox="0 0 400 560" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="Pineapple illustration" preserveAspectRatio="xMidYMax meet">
+  <defs>
+    <linearGradient id="fm-crown-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#81C784"/>
+      <stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="fm-crown-deep" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#2E7D32"/>
+    </linearGradient>
+    <pattern id="fm-diamond-grid" x="0" y="0" width="34" height="34"
+             patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect x="0.5" y="0.5" width="33" height="33" rx="4.5"
+            fill="none" stroke="#D0870B" stroke-width="1.2" stroke-opacity="0.68"/>
+      <path d="M 0 34 L 0 0 L 34 0" fill="none"
+            stroke="#FFF8E0" stroke-width="0.5" stroke-opacity="0.5"/>
+      <circle cx="17" cy="17" r="1.3" fill="#E09010" fill-opacity="0.46"/>
+    </pattern>
+    <path id="fm-body-path"
+          d="M 200 90
+             C 134 94, 88 156, 82 244
+             C 74 372, 100 516, 160 636
+             C 178 672, 222 672, 240 636
+             C 300 516, 326 372, 318 244
+             C 312 156, 266 94, 200 90 Z"/>
+    <clipPath id="fm-body-clip"><use href="#fm-body-path"/></clipPath>
+    <filter id="fm-fruit-shadow" x="-25%" y="-15%" width="150%" height="140%">
+      <feDropShadow dx="8" dy="10" stdDeviation="8"
+                    flood-color="#8B5A2B" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <g filter="url(#fm-fruit-shadow)">
+    <g class="hero-crown">
+      <path d="M 200 88 L 170 10 L 190 46 Z" fill="url(#fm-crown-deep)" stroke="#1B5E20" stroke-width="0.62"/>
+      <path d="M 200 88 L 230 10 L 210 46 Z" fill="url(#fm-crown-deep)" stroke="#1B5E20" stroke-width="0.62"/>
+      <path d="M 200 88 L 146 32 L 168 62 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.56"/>
+      <path d="M 200 88 L 254 32 L 232 62 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.56"/>
+      <path d="M 200 88 L 126 58 L 150 82 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.52" opacity="0.9"/>
+      <path d="M 200 88 L 274 58 L 250 82 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.52" opacity="0.9"/>
+      <path d="M 200 88 L 200 2 L 214 42 Z" fill="#A5D6A7" stroke="#1B5E20" stroke-width="0.62"/>
+      <path d="M 200 88 L 200 2 L 186 42 Z" fill="url(#fm-crown-mid)" stroke="#1B5E20" stroke-width="0.62"/>
+    </g>
+    <use href="#fm-body-path" fill="#F8B63A" stroke="#C68A12" stroke-width="1.9"/>
+    <g clip-path="url(#fm-body-clip)">
+      <rect x="40" y="74" width="320" height="500" fill="url(#fm-diamond-grid)"/>
+    </g>
+    <use href="#fm-body-path" fill="none" stroke="#B8860B" stroke-width="1.7" stroke-opacity="0.42"/>
+  </g>
+</svg>"""
+
+
+_HERO_PINEAPPLE_SVG_FLAT_MINIMAL = _build_hero_pineapple_svg_flat_minimal()
+
+# ── Active design: flat minimal pineapple (Concept A) ─────────────
+# Sits on the hero gradient directly (no inner card); static, no float
+# animation. Legacy crystal PNG / glass SVG variants remain for forks.
+HERO_PINEAPPLE_SVG = """\
+<svg class="hero-pineapple" viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="body-grad" x1="0.15" y1="0" x2="0.9" y2="1">
+      <stop offset="0%"  stop-color="#FFF3B0"/>
+      <stop offset="35%" stop-color="#FFD700"/>
+      <stop offset="75%" stop-color="#F4A300"/>
+      <stop offset="100%" stop-color="#9E6A0A"/>
+    </linearGradient>
+    <radialGradient id="body-sheen" cx="0.28" cy="0.28" r="0.55">
+      <stop offset="0%"  stop-color="#FFF8DC" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#FFF8DC" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFF8DC" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leaf-front" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#A5D6A7"/>
+      <stop offset="50%" stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+    <linearGradient id="leaf-mid" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#81C784"/>
+      <stop offset="100%" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="leaf-back" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#0F3B14"/>
+    </linearGradient>
+    <pattern id="diamond" x="0" y="0" width="74" height="74" patternUnits="userSpaceOnUse" patternTransform="rotate(2)">
+      <path d="M 37 0 L 74 37 L 37 74 L 0 37 Z"
+            fill="none" stroke="#8B5A2B" stroke-width="2.4" stroke-linejoin="round" opacity="0.75"/>
+      <circle cx="37" cy="37" r="3" fill="#F4A300"/>
+      <circle cx="0"  cy="37" r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="74" cy="37" r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="37" cy="0"  r="2.2" fill="#C9820A" opacity="0.8"/>
+      <circle cx="37" cy="74" r="2.2" fill="#C9820A" opacity="0.8"/>
+    </pattern>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="14" result="off"/>
+      <feColorMatrix in="off" type="matrix"
+        values="0 0 0 0 0.54  0 0 0 0 0.35  0 0 0 0 0.10  0 0 0 0.55 0"/>
+      <feBlend in="SourceGraphic" in2="off" mode="normal"/>
+    </filter>
+  </defs>
+
+  <!-- ambient sun aura -->
+  <circle cx="320" cy="520" r="340" fill="#FFD700" opacity="0.18"/>
+  <circle cx="320" cy="520" r="260" fill="#FFE27A" opacity="0.28"/>
+
+  <!-- back leaves (far layer) -->
+  <g filter="url(#soft-shadow)">
+    <path d="M 210 340 Q 150 180 90 80  Q 140 220 170 330 Z"  fill="url(#leaf-back)"/>
+    <path d="M 430 340 Q 490 180 550 80 Q 500 220 470 330 Z"  fill="url(#leaf-back)"/>
+    <path d="M 260 345 Q 220 140 200 20 Q 250 180 265 335 Z"  fill="url(#leaf-back)"/>
+    <path d="M 380 345 Q 420 140 440 20 Q 390 180 375 335 Z"  fill="url(#leaf-back)"/>
+  </g>
+
+  <!-- mid leaves -->
+  <g>
+    <path d="M 240 355 Q 210 170 190 40  Q 245 200 258 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 400 355 Q 430 170 450 40  Q 395 200 382 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 285 355 Q 270 130 260 0   Q 295 170 298 345 Z" fill="url(#leaf-mid)"/>
+    <path d="M 355 355 Q 370 130 380 0   Q 345 170 342 345 Z" fill="url(#leaf-mid)"/>
+  </g>
+
+  <!-- front leaves (tall, center) -->
+  <g>
+    <path d="M 315 360 Q 308 140 318 15 Q 325 160 325 355 Z" fill="url(#leaf-front)"/>
+    <path d="M 325 360 Q 335 140 322 15 Q 317 160 315 355 Z" fill="url(#leaf-front)" opacity="0.85"/>
+    <!-- central leaf highlights -->
+    <path d="M 320 140 Q 322 80 325 30" stroke="#E8F5E9" stroke-width="2" fill="none" opacity="0.6"/>
+    <path d="M 300 200 Q 292 120 280 50" stroke="#C8E6C9" stroke-width="1.5" fill="none" opacity="0.5"/>
+    <path d="M 340 200 Q 348 120 360 50" stroke="#C8E6C9" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </g>
+
+  <!-- Body -->
+  <g filter="url(#soft-shadow)">
+    <ellipse cx="320" cy="580" rx="240" ry="300" fill="url(#body-grad)"
+             stroke="#8B5A2B" stroke-width="5"/>
+  </g>
+  <!-- Diamond lattice overlay clipped to body -->
+  <ellipse cx="320" cy="580" rx="236" ry="296" fill="url(#diamond)" opacity="0.85"/>
+  <!-- Sheen -->
+  <ellipse cx="250" cy="470" rx="110" ry="150" fill="url(#body-sheen)"/>
+  <!-- Bottom shadow crescent -->
+  <path d="M 130 720 Q 320 920 510 720 Q 430 870 320 880 Q 210 870 130 720 Z"
+        fill="#8B5A2B" opacity="0.18"/>
+
+  <!-- Floating little leaf accents (decorative particles) -->
+  <g opacity="0.8">
+    <path d="M 70 440 q 10 -18 30 -8 q -18 10 -30 8 Z"  fill="#4CAF50"/>
+    <path d="M 560 400 q -10 -18 -30 -8 q 18 10 30 8 Z" fill="#4CAF50"/>
+    <path d="M 40 680 q 14 -10 26 6 q -18 0 -26 -6 Z"    fill="#66BB6A"/>
+    <path d="M 585 700 q -14 -10 -26 6 q 18 0 26 -6 Z"   fill="#66BB6A"/>
+  </g>
+</svg>
+"""
 
 
 LANG_COLORS = {
@@ -7290,17 +7480,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
            which is the only place the codebase name appears at the top
            of the page. -->
 
-      <section class="team-intro-banner" aria-labelledby="team-banner-heading">
-        <div class="team-banner-title-cell">
-          <h2 id="team-banner-heading" class="team-banner-title">The Pineapple Project</h2>
-        </div>
-        <p class="team-banner-body">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
-      </section>
-
       <div class="hero">
-        <!-- Left of the pineapple: EVERGREEN content that stays the same
-             on every visualization this skill produces. Title + tagline
-             sit directly on the hero background (un-boxed). -->
         <div class="hero-content">
           <div class="hero-evergreen">
             <h1 class="hero-evergreen-title">
@@ -7308,13 +7488,13 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
               <span class="hero-title-sub">Codebase Almanac</span>
             </h1>
             <p class="hero-evergreen-body">This is a skill that streamlines the &quot;vibe-coding&quot; experience by providing a clear visual map of your codebase to assemble contexts by offering actionable insights and intelligent suggestions for product features, architectural improvements, security risks, databases, and the idea validation process.</p>
+            <div class="hero-team-section">
+              <h3 class="hero-team-subtitle">About Pineapple Team</h3>
+              <p class="hero-team-intro">In the coming era of AGI, building solutions becomes a collective process akin to a pineapple, where technical and non-technical contributors fuse like individual berries into a unified, organic whole. This partnership mirrors the 8 &amp; 13 dual spirals of the Fibonacci sequence, intertwining creative human intent with AI-driven structural analysis to assemble a perfect, high-resolution context for building at the speed of thought.</p>
+            </div>
           </div>
         </div>
         <div class="hero-art">{HERO_PINEAPPLE_SVG}</div>
-        <!-- The two stray crown leaves (.hero-leaf.one / .hero-leaf.two)
-             and the four hero-meta chips (files / LOC / deps / symbols)
-             were removed in batch 3 because they duplicated the metric
-             cards below and floated detached from the pineapple body. -->
       </div>
 
       <!-- ============================================================= -->
