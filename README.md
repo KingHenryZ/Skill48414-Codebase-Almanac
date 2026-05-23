@@ -27,18 +27,18 @@ If you see something like `Python 3.10.4` you're done. If you see `command not f
 1. Open <https://github.com/KingHenryZ/Skill48414-Codebase-Almanac> in your browser
 2. Click the green **Code** button → **Download ZIP**
 3. Unzip it somewhere you'll remember (e.g. your Desktop or `~/Documents/`)
-4. Open the unzipped `Project48414` folder
+4. Open the unzipped `Skill48414-Codebase-Almanac-main` folder
 
 That folder is the skill.
 
 ### Step 3 — Open the skill folder in your editor
 
-**For Cursor users:** open Cursor → **File → Open Folder…** → pick the `Project48414` folder. The skill is auto-registered via `.cursor/rules/visualizer.mdc` — nothing else to do.
+**For Cursor users:** open Cursor → **File → Open Folder…** → pick the `Skill48414-Codebase-Almanac-main` folder. The skill is auto-registered via `.cursor/rules/visualizer.mdc` — nothing else to do.
 
 **For Claude Code users:** copy the folder into your skills directory:
 
 ```bash
-cp -r Project48414 ~/.claude/skills/codebase-almanac
+cp -r Skill48414-Codebase-Almanac-main ~/.claude/skills/codebase-almanac
 ```
 
 The skill is now available as `/codebase-almanac` inside Claude Code.
