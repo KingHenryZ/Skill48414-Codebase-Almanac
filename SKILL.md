@@ -517,7 +517,7 @@ Diagrams are rendered by **Mermaid.js from jsDelivr** (currently v10+ / v11). In
 Run:
 
 ```bash
-python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name] --enrichment <enrichment.json>
+python scripts/generate-visualization.py <analysis.json> <output.html> [title] [project_name] --enrichment <enrichment.json> --no-open
 ```
 
 Arguments:
@@ -526,6 +526,7 @@ Arguments:
 - `[title]` — (Optional) Custom page title. Defaults to `"{project_name} — Code Visualization"`
 - `[project_name]` — (Optional) Override the project name detected in the JSON
 - `--enrichment <enrichment.json>` — **(Optional)** Path to the `enrichment.json` written in Phase 3 Step 3.10. **Auto-discovered** when the analysis JSON sits next to it (canonical layout: `.codebase-almanac/codebase-analysis.json` + `.codebase-almanac/enrichment.json`). The script merges this into the analysis data and fills all content sections automatically. Without enrichment (and no auto-discovered sibling), the visualization renders `[AI_FILL]` placeholders in every section — that's the silent-failure mode the auto-discover guards against, so always either keep the canonical layout or pass `--enrichment` explicitly.
+- `--no-open` — **(Required in agent runs.)** Suppresses the script's built-in browser launch. Phase 5 opens the file once via `open` / `xdg-open`. Omitting this flag causes two browser tabs (script auto-open + Phase 5).
 
 The script produces a single self-contained HTML file with the Pineapple Tropical Maximalist theme. It reads `visualization-base.css` from the project root automatically and embeds all CSS, JS, Mermaid diagrams, and an SVG pineapple hero illustration inline. Before embedding, it **normalizes Mermaid source** (subgraph spacing, common `erDiagram` type mistakes, colon-in-label edge cases, and dependency-node labels) so diagrams parse under **Mermaid.js 10+**, and it maps security finding text in order **`remediation` → `recommendation` → `detail`** into the **Recommendation:** row.
 
@@ -591,7 +592,7 @@ Quickly scan the HTML for any section that looks generic or could apply to any p
 ## Phase 5: Delivery
 
 1. **Clean up** — Delete `.codebase-almanac/previews/` if it exists
-2. **Open in browser (mandatory)** — Always run `open <output.html>` (macOS) or `xdg-open <output.html>` (Linux) immediately after generation. Do not skip this step or ask whether the user wants it opened — just open it.
+2. **Open in browser (mandatory, once)** — Phase 4 passes `--no-open`, so the script does not launch a tab. Always run `open <output.html>` (macOS) or `xdg-open <output.html>` (Linux) here as the single browser open. Do not skip this step or ask whether the user wants it opened — just open it.
 3. **Summarize** — Tell the user:
    - File location, file size, visualization scope
    - Navigation: Tab bar (8 tabs), sidebar file tree, keyboard shortcuts (`1`–`8`), and audience mode toggle (no search bar — by design)

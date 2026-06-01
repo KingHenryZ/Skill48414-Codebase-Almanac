@@ -17,8 +17,8 @@ When this rule is invoked, follow the phased workflow in `SKILL.md`:
 3. **Phase 1:** Run `python scripts/extract-codebase.py <target_dir> <output_dir>`
 4. **Phase 2:** Skip — fixed defaults (no questions). See SKILL.md Phase 2.
 5. **Phase 3:** Read key files from the codebase to enrich with product/security insights
-6. **Phase 4:** Generate the HTML visualization with `python scripts/generate-visualization.py`
-7. **Phase 5:** Open in browser and summarize
+6. **Phase 4:** Generate the HTML visualization with `python scripts/generate-visualization.py ... --no-open` (required — prevents double browser tabs)
+7. **Phase 5:** Open in browser once (`open` / `xdg-open`) and summarize
 
 ## Tool Mapping
 

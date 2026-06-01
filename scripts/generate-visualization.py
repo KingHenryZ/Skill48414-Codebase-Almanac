@@ -1542,6 +1542,15 @@ body:not(.easy-mode) .easy-only { display: none !important; }
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   padding: 22px;
+  overflow: visible;
+}
+/* Decorative halo sits top-right on generic cards — that overlaps the
+   right-aligned tab title on Overview link cards, so park it bottom-left. */
+.summary-link-card::before {
+  top: auto;
+  right: auto;
+  bottom: -48px;
+  left: -48px;
 }
 .summary-link-card:hover {
   transform: translateY(-4px) rotate(-0.3deg);
@@ -1570,14 +1579,19 @@ body:not(.easy-mode) .easy-only { display: none !important; }
   filter: drop-shadow(0 2px 4px rgba(244, 163, 0, 0.35));
 }
 .summary-link-card .card-title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-heading) !important;
   font-weight: 700;
-  font-size: clamp(1.35rem, 1.8vw, 1.7rem) !important;
+  font-size: clamp(1.2rem, 1.6vw, 1.55rem) !important;
   letter-spacing: -0.01em;
-  line-height: 1.0;
+  line-height: 1.15;
   margin: 0;
   color: var(--leaf-deep);
   text-align: right;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .summary-link-card .card-desc {
@@ -7259,7 +7273,7 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
     tab_ids += ["security", "suggestions", "pitch", "simulation"]
     tab_labels.update({
         "security": "Security",
-        "suggestions": "Strategic Recommendations",
+        "suggestions": "Strategic Suggestions",
         "pitch": "Idea Validation",
         "simulation": "Future Outlook",
     })
