@@ -384,6 +384,32 @@ html::after {
   align-items: center !important;
 }
 .tab-bar { gap: 4px; flex-wrap: wrap; align-items: center; }
+
+/* === Download PDF button (top bar) === */
+/* Inherits the theme's gold pill chrome from the generic button rule;
+   this block only handles layout (sits at the right edge of the top bar)
+   and sizing so it lines up with the tab pills. Hidden in print because
+   the whole .top-bar is display:none under @media print. */
+.download-pdf-btn {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 7px 16px !important;
+}
+.download-pdf-icon { font-size: 0.95em; line-height: 1; }
+
+/* While preparing a print/PDF export we momentarily reveal every tab panel
+   so Mermaid can render diagrams that normally live in hidden tabs. The
+   active audience mode (Developer/General) is left untouched, so only the
+   currently-selected mode's diagrams render into the PDF. */
+body.preparing-print .tab-panel { display: block !important; }
+body.preparing-print { cursor: progress; }
+
 .tab-btn {
   background: linear-gradient(180deg, #FFF9E6, #FFECB3) !important;
   color: var(--text-primary) !important;
@@ -7483,6 +7509,9 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
       <div class="tab-bar" role="tablist" aria-label="Visualization tabs">
         {tab_buttons}
       </div>
+      <button class="download-pdf-btn" type="button" onclick="downloadPDF()" aria-label="Download this almanac as a PDF" title="Save the whole almanac as a PDF (opens your browser's Save as PDF dialog)">
+        <span class="download-pdf-icon" aria-hidden="true">&#x2B07;</span> Download PDF
+      </button>
     </div>
 
     <!-- ============================================================= -->
@@ -7959,6 +7988,60 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
       window.scrollTo({{ top: 0, behavior: 'smooth' }});
     }});
   }}
+
+  // === DOWNLOAD AS PDF ===
+  // Native, dependency-free export. Mermaid renders diagrams lazily for the
+  // active tab only, so before printing we momentarily reveal every tab
+  // panel (via the `preparing-print` body class), render all diagrams in the
+  // CURRENTLY-ACTIVE audience mode, await them, then hand off to the
+  // browser's print -> "Save as PDF". The @media print stylesheet lays out
+  // every tab as its own set of pages. The Developer/General toggle is left
+  // untouched, so only the active mode is exported.
+  async function renderAllMermaidForPrint() {{
+    document.body.classList.add('preparing-print');
+    // Force layout so offsetParent reflects the now-revealed panels.
+    void document.body.offsetHeight;
+    const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))
+      .filter((el) => el.offsetParent !== null);
+    if (nodes.length) {{
+      nodes.forEach((el) => {{
+        const src = el.getAttribute('data-original');
+        if (src) {{ el.removeAttribute('data-processed'); el.textContent = src; }}
+      }});
+      try {{ await mermaid.run({{ nodes }}); }} catch (e) {{ /* keep going so the PDF still exports */ }}
+    }}
+    // Let the freshly-rendered SVGs settle before the print snapshot.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }}
+
+  async function downloadPDF() {{
+    const btn = document.querySelector('.download-pdf-btn');
+    if (btn) {{ btn.disabled = true; }}
+    try {{
+      await renderAllMermaidForPrint();
+      window.print();
+    }} finally {{
+      document.body.classList.remove('preparing-print');
+      if (btn) {{ btn.disabled = false; }}
+      renderVisibleMermaid(document.querySelector('.tab-panel.active'));
+    }}
+  }}
+
+  // Best-effort for users who press Ctrl/Cmd+P directly instead of the
+  // button: render any still-unrendered visible diagrams. Synchronous print
+  // may fire before this async render completes, so the Download PDF button
+  // remains the reliable path for a fully-rendered export.
+  window.addEventListener('beforeprint', () => {{
+    if (document.body.classList.contains('preparing-print')) return;
+    const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))
+      .filter((el) => el.offsetParent !== null && !el.getAttribute('data-processed'));
+    if (!nodes.length) return;
+    nodes.forEach((el) => {{
+      const src = el.getAttribute('data-original');
+      if (src) {{ el.removeAttribute('data-processed'); el.textContent = src; }}
+    }});
+    try {{ mermaid.run({{ nodes }}); }} catch (e) {{ /* best-effort */ }}
+  }});
 
   // === FILE TREE ===
   function toggleTreeNode(element) {{

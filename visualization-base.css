@@ -591,39 +591,118 @@ code, .code {
 
 /* === PRINT === */
 
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
 @media print {
-  .sidebar,
-  .sidebar-toggle,
-  .top-bar {
+  /* Print the theme colours/backgrounds instead of stripping them to white.
+     Without this, Chrome/Safari skip background fills AND gradient-clipped
+     text (e.g. .card-value metric numbers) renders invisible. */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Chrome paints the root (html) background on EVERY page, so the themed
+     page tint carries through all 21+ pages. The body background uses
+     background-attachment: fixed on screen, which only prints on page 1 —
+     so we make body transparent and let html own the page background. */
+  html {
+    background:
+      radial-gradient(ellipse 90% 40% at 50% 0%, #FFF6C8 0%, transparent 60%),
+      linear-gradient(180deg, #FFF9E6 0%, #FFEFC4 100%) !important;
+    background-attachment: scroll !important;
+  }
+  body {
+    background: transparent !important;
+  }
+  /* The fixed full-viewport texture overlays only paint on page 1; drop them
+     so every page looks consistent. */
+  body::before,
+  html::after {
     display: none !important;
   }
 
-  .main-content {
-    margin-left: 0 !important;
+  /* Hide interactive chrome that has no meaning in a static PDF. */
+  .sidebar,
+  .sidebar-toggle,
+  .top-bar,
+  .tropical-top-banner,
+  .download-pdf-btn {
+    display: none !important;
   }
 
+  /* Flatten the flex shell to a single full-width column so nothing is
+     clipped at the right page margin. */
+  .app-layout {
+    display: block !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
+  .main-content {
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
   .tab-panel {
     display: block !important;
     page-break-before: always;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
-
   .tab-panel:first-of-type {
     page-break-before: auto;
   }
 
-  body {
-    background: #fff;
-    color: #000;
+  /* Gradient-clipped text falls back to a solid colour so it is never
+     invisible even if a browser ignores print-color-adjust. */
+  .card-value {
+    -webkit-text-fill-color: #C97A00 !important;
+    color: #C97A00 !important;
+    background: none !important;
   }
 
-  .card, .diagram-container, .finding {
-    box-shadow: none;
-    border: 1px solid #ccc;
+  .badge-high { background: #cc0000 !important; }
+  .badge-medium { background: #cc8800 !important; }
+  .badge-low { background: #0066cc !important; }
+
+  /* Keep self-contained blocks from being split across page boundaries
+     when the whole almanac is exported as a PDF. */
+  .card,
+  .metric-card,
+  .diagram-container,
+  .finding,
+  .roadmap-node,
+  .risk-card,
+  .summary-link,
+  .seasoning-chip,
+  table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .hero {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
-  .badge-high { background: #cc0000; }
-  .badge-medium { background: #cc8800; }
-  .badge-low { background: #0066cc; }
+  .tab-panel h2,
+  .panel-header {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Diagrams scale to the printable page width instead of overflowing. */
+  .mermaid svg,
+  img,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 }
 
 /* === REDUCED MOTION === */

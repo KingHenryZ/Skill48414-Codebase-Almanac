@@ -639,39 +639,101 @@ code, .code {
 
 /* === PRINT === */
 
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
 @media print {
-  .sidebar,
-  .sidebar-toggle,
-  .top-bar {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html {
+    background:
+      radial-gradient(ellipse 90% 40% at 50% 0%, #FFF6C8 0%, transparent 60%),
+      linear-gradient(180deg, #FFF9E6 0%, #FFEFC4 100%) !important;
+    background-attachment: scroll !important;
+  }
+  body {
+    background: transparent !important;
+  }
+  body::before,
+  html::after {
     display: none !important;
   }
 
-  .main-content {
-    margin-left: 0 !important;
+  .sidebar,
+  .sidebar-toggle,
+  .top-bar,
+  .tropical-top-banner,
+  .download-pdf-btn {
+    display: none !important;
   }
 
+  .app-layout {
+    display: block !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
+  .main-content {
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
   .tab-panel {
     display: block !important;
     page-break-before: always;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
-
   .tab-panel:first-of-type {
     page-break-before: auto;
   }
 
-  body {
-    background: #fff;
-    color: #000;
+  .card-value {
+    -webkit-text-fill-color: #C97A00 !important;
+    color: #C97A00 !important;
+    background: none !important;
   }
 
-  .card, .diagram-container, .finding {
-    box-shadow: none;
-    border: 1px solid #ccc;
+  .badge-high { background: #cc0000 !important; }
+  .badge-medium { background: #cc8800 !important; }
+  .badge-low { background: #0066cc !important; }
+
+  .card,
+  .metric-card,
+  .diagram-container,
+  .finding,
+  .roadmap-node,
+  .risk-card,
+  .summary-link,
+  .seasoning-chip,
+  table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .hero {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
-  .badge-high { background: #cc0000; }
-  .badge-medium { background: #cc8800; }
-  .badge-low { background: #0066cc; }
+  .tab-panel h2,
+  .panel-header {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .mermaid svg,
+  img,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 }
 
 /* === REDUCED MOTION === */
@@ -1021,6 +1083,24 @@ html::after {
   align-items: center !important;
 }
 .tab-bar { gap: 4px; flex-wrap: wrap; align-items: center; }
+
+/* === Download PDF button (top bar) === */
+.download-pdf-btn {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 7px 16px !important;
+}
+.download-pdf-icon { font-size: 0.95em; line-height: 1; }
+
+body.preparing-print .tab-panel { display: block !important; }
+body.preparing-print { cursor: progress; }
+
 .tab-btn {
   background: linear-gradient(180deg, #FFF9E6, #FFECB3) !important;
   color: var(--text-primary) !important;
@@ -3332,6 +3412,9 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 <button class="tab-btn" role="tab" data-tab="simulation" onclick="switchTab('simulation')">Future Outlook</button>
 
       </div>
+      <button class="download-pdf-btn" type="button" onclick="downloadPDF()" aria-label="Download this almanac as a PDF" title="Save the whole almanac as a PDF (opens your browser's Save as PDF dialog)">
+        <span class="download-pdf-icon" aria-hidden="true">&#x2B07;</span> Download PDF
+      </button>
     </div>
 
     <!-- ============================================================= -->
@@ -4138,6 +4221,47 @@ body:not(.easy-mode) .easy-only { display: none !important; }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
+
+  // === DOWNLOAD AS PDF ===
+  async function renderAllMermaidForPrint() {
+    document.body.classList.add('preparing-print');
+    void document.body.offsetHeight;
+    const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))
+      .filter((el) => el.offsetParent !== null);
+    if (nodes.length) {
+      nodes.forEach((el) => {
+        const src = el.getAttribute('data-original');
+        if (src) { el.removeAttribute('data-processed'); el.textContent = src; }
+      });
+      try { await mermaid.run({ nodes }); } catch (e) { /* keep going so the PDF still exports */ }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  async function downloadPDF() {
+    const btn = document.querySelector('.download-pdf-btn');
+    if (btn) { btn.disabled = true; }
+    try {
+      await renderAllMermaidForPrint();
+      window.print();
+    } finally {
+      document.body.classList.remove('preparing-print');
+      if (btn) { btn.disabled = false; }
+      renderVisibleMermaid(document.querySelector('.tab-panel.active'));
+    }
+  }
+
+  window.addEventListener('beforeprint', () => {
+    if (document.body.classList.contains('preparing-print')) return;
+    const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))
+      .filter((el) => el.offsetParent !== null && !el.getAttribute('data-processed'));
+    if (!nodes.length) return;
+    nodes.forEach((el) => {
+      const src = el.getAttribute('data-original');
+      if (src) { el.removeAttribute('data-processed'); el.textContent = src; }
+    });
+    try { mermaid.run({ nodes }); } catch (e) { /* best-effort */ }
+  });
 
   // === FILE TREE ===
   function toggleTreeNode(element) {
