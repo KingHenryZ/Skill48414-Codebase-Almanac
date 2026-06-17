@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="generator" content="codebase-almanac (SKILL.md)" />
-<title>SpendWise — Code Visualization</title>
+<title>Spendwise — Code Visualization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400;1,9..40,500&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,600;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
@@ -637,11 +637,37 @@ code, .code {
   }
 }
 
-/* === PRINT === */
+/* === PRINT (Report mode) ===
+   Both the "Download PDF" button and a direct Ctrl/Cmd+P route through this
+   stylesheet. Instead of printing the on-screen tropical theme, the export
+   is re-skinned into a clean, paginated analyst-style report: white pages,
+   serif headings, numbered figures and a page-number footer.
+
+   This base block owns the structural rules that the theme does NOT touch
+   (page geometry + footer counters, panel reveal, page breaks, full-width
+   flattening). The colour / decoration re-skin that has to OVERRIDE the
+   Pineapple theme lives in the theme's own @media print block (emitted by
+   generate-visualization.py AFTER this file, so it wins the cascade). */
+
+.print-cover,
+.print-toc { display: none; }
 
 @page {
   size: A4 portrait;
-  margin: 12mm;
+  margin: 18mm 16mm 20mm;
+  @top-right {
+    content: "Codebase Almanac";
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 8.5pt;
+    letter-spacing: 0.05em;
+    color: #8a8a8a;
+  }
+  @bottom-center {
+    content: "\2014  " counter(page) " of " counter(pages) "  \2014";
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9pt;
+    color: #6a6a6a;
+  }
 }
 
 @media print {
@@ -652,28 +678,36 @@ code, .code {
     print-color-adjust: exact !important;
   }
 
-  html {
-    background:
-      radial-gradient(ellipse 90% 40% at 50% 0%, #FFF6C8 0%, transparent 60%),
-      linear-gradient(180deg, #FFF9E6 0%, #FFEFC4 100%) !important;
-    background-attachment: scroll !important;
+  /* Plain white pages with near-black body text. The on-screen layout makes
+     <body> a flexbox (its only flow child is .app-layout); in print we add
+     block-level cover/contents pages as siblings, so reset to block flow or
+     they line up in a row and overflow the right page edge. */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
   }
   body {
-    background: transparent !important;
+    display: block !important;
   }
+  /* Drop the fixed full-viewport texture overlays. */
   body::before,
   html::after {
     display: none !important;
   }
 
+  /* Hide interactive / decorative chrome that has no meaning in a PDF. */
   .sidebar,
   .sidebar-toggle,
   .top-bar,
   .tropical-top-banner,
-  .download-pdf-btn {
+  .download-pdf-btn,
+  .credits {
     display: none !important;
   }
 
+  /* Flatten the flex shell to a single full-width column so nothing is
+     clipped at the right page margin. */
   .app-layout {
     display: block !important;
     width: 100% !important;
@@ -684,6 +718,16 @@ code, .code {
     width: 100% !important;
     max-width: 100% !important;
   }
+
+  /* Print-only title page, then a contents page, then one page per section. */
+  .print-cover {
+    display: flex !important;
+    page-break-after: always;
+  }
+  .print-toc {
+    display: block !important;
+    page-break-after: always;
+  }
   .tab-panel {
     display: block !important;
     page-break-before: always;
@@ -691,20 +735,25 @@ code, .code {
     max-width: 100% !important;
     box-sizing: border-box;
   }
-  .tab-panel:first-of-type {
-    page-break-before: auto;
+
+  /* Nothing may exceed the printable column width, or it gets cropped at
+     the right page margin. Constrain the shell + every wide element. */
+  .app-layout,
+  .main-content,
+  .tab-panel,
+  .tab-panel * {
+    box-sizing: border-box !important;
+  }
+  .tab-panel img,
+  .tab-panel svg,
+  .tab-panel pre,
+  .tab-panel table,
+  .tab-panel .mermaid,
+  .tab-panel .diagram-container {
+    max-width: 100% !important;
   }
 
-  .card-value {
-    -webkit-text-fill-color: #C97A00 !important;
-    color: #C97A00 !important;
-    background: none !important;
-  }
-
-  .badge-high { background: #cc0000 !important; }
-  .badge-medium { background: #cc8800 !important; }
-  .badge-low { background: #0066cc !important; }
-
+  /* Keep self-contained blocks from being split across page boundaries. */
   .card,
   .metric-card,
   .diagram-container,
@@ -713,11 +762,8 @@ code, .code {
   .risk-card,
   .summary-link,
   .seasoning-chip,
+  figure,
   table {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-  .hero {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -728,6 +774,7 @@ code, .code {
     page-break-after: avoid;
   }
 
+  /* Diagrams scale to the printable page width instead of overflowing. */
   .mermaid svg,
   img,
   svg {
@@ -1085,6 +1132,10 @@ html::after {
 .tab-bar { gap: 4px; flex-wrap: wrap; align-items: center; }
 
 /* === Download PDF button (top bar) === */
+/* Inherits the theme's gold pill chrome from the generic button rule;
+   this block only handles layout (sits at the right edge of the top bar)
+   and sizing so it lines up with the tab pills. Hidden in print because
+   the whole .top-bar is display:none under @media print. */
 .download-pdf-btn {
   flex: 0 0 auto;
   display: inline-flex !important;
@@ -1098,6 +1149,10 @@ html::after {
 }
 .download-pdf-icon { font-size: 0.95em; line-height: 1; }
 
+/* While preparing a print/PDF export we momentarily reveal every tab panel
+   so Mermaid can render diagrams that normally live in hidden tabs. The
+   active audience mode (Developer/General) is left untouched, so only the
+   currently-selected mode's diagrams render into the PDF. */
 body.preparing-print .tab-panel { display: block !important; }
 body.preparing-print { cursor: progress; }
 
@@ -3368,20 +3423,329 @@ body:not(.easy-mode) .easy-only { display: none !important; }
     border-width: 1.5px;
   }
 }
+/* === PRINT RE-SKIN (Report mode) =====================================
+   Emitted AFTER visualization-base.css, so these rules win the cascade and
+   override the Pineapple theme's colours, gradients and decoration when the
+   almanac is exported to PDF. The result is a clean, monochrome analyst-style
+   report with a single warm accent (#B5710A) reserved for section rules,
+   figure labels and the cover. The structural print rules (page geometry,
+   footer page counters, panel reveal, page breaks) live in the base file. */
 @media print {
-  .credits {
-    position: static;
-    box-shadow: none;
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
+  /* Flatten every themed background / texture to plain white. */
+  html, body {
+    background: #ffffff !important;
+    background-image: none !important;
   }
-  .credits .credits-link { display: none; }
+  body::before, html::after,
+  .tab-panel::before, .tab-panel::after,
+  .hero::before, .hero::after {
+    display: none !important;
+    background: none !important;
+    content: none !important;
+  }
+
+  /* Sections + hero become plain blocks, not glossy gold cards. */
+  .tab-panel, .hero, .codebase-card {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 4px !important;
+  }
+  .hero-art { display: none !important; }
+
+  /* Strip decorative emoji / glyphs from headings, dividers, icons. */
+  h2:not(.codebase-card-name):not(.no-h2-deco)::before,
+  h2::after,
+  .card-icon,
+  .summary-link-head .card-icon,
+  .tree-icon,
+  .section-divider,
+  .pineapple-divider {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Headings: serif display face, solid ink, never a gradient text-fill. */
+  h1, h2, h3, h4,
+  .codebase-card-name,
+  .panel-header h2,
+  .pitch-oneliner-text {
+    font-family: var(--font-heading) !important;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  /* Thin accent rule under each section heading (report convention). */
+  .tab-panel h2:not(.codebase-card-name) {
+    border-bottom: 1.5px solid #B5710A !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Body copy in dark grey; highlight chips become plain bold text. */
+  p, li, td, th,
+  .health-row-desc, .finding-detail, .prose-bullets li {
+    color: #1f1c16 !important;
+  }
+  .kw {
+    background: none !important;
+    color: inherit !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .num { color: inherit !important; font-weight: 700 !important; background: none !important; }
+
+  /* Cards / findings / callouts: flat hairline-bordered blocks. */
+  .card, .metric-card, .finding, .risk-card, .roadmap-node,
+  .summary-link, .copyable-block, .pitch-oneliner, .pitch-story,
+  .sim-takeoff-card, .team-intro-banner {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #d8d2c4 !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+  }
+  .card::before, .card::after,
+  .metric-card::before, .metric-card::after,
+  .finding::before, .finding::after,
+  .diagram-container::before,
+  .sim-takeoff-card::before {
+    display: none !important;
+    content: none !important;
+  }
+  .card-value {
+    -webkit-text-fill-color: #B5710A !important;
+    color: #B5710A !important;
+    background: none !important;
+  }
+
+  /* Tables: simple ruled grid with an accented header row. */
+  table, .data-table { border-collapse: collapse !important; }
+  th, td, .data-table th, .data-table td {
+    border: 1px solid #d8d2c4 !important;
+    background: #ffffff !important;
+  }
+  th, .data-table th {
+    background: #f4efe6 !important;
+    color: #14110b !important;
+    border-bottom: 1.5px solid #B5710A !important;
+  }
+
+  /* Severity / framework badges -> readable outlined ink. */
+  .badge, .badge-high, .badge-medium, .badge-low, .badge-framework {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #14110b !important;
+    border: 1px solid #555555 !important;
+    box-shadow: none !important;
+  }
+
+  /* Seasoning / mode / health chips: keep the text, drop the gold pill. */
+  .seasoning-chip, .mode-toggle, .traffic-light {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #999999 !important;
+    color: #14110b !important;
+    box-shadow: none !important;
+  }
+
+  /* Numbered figures beneath every diagram. */
+  body { counter-reset: figure; }
+  .diagram-container {
+    counter-increment: figure;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+  }
+  .diagram-container::after {
+    display: block !important;
+    content: "Figure " counter(figure) "." !important;
+    margin-top: 8px !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 9pt !important;
+    font-style: italic !important;
+    color: #5a5650 !important;
+    text-align: center !important;
+  }
+
+  /* ---- Right-edge crop guards ----
+     Diagrams render at natural size and tables/code can be very wide; scale
+     or wrap them so nothing spills past the printable column. */
+  .mermaid, .diagram-container { overflow: hidden !important; }
+  .mermaid svg {
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+  }
+  pre, code,
+  .card-loc code, td code, .data-table code, .symbol-kind {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  table, .data-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+  }
+  th, td, .data-table th, .data-table td {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  /* Let horizontal-scroll containers wrap instead of clipping on paper. */
+  .scalability-roadmap, .roadmap, [style*="overflow-x"] {
+    overflow: visible !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* ---- Contents page ---- */
+  .print-toc {
+    color: #14110b !important;
+    padding-top: 6mm;
+  }
+  .print-toc-title {
+    font-family: var(--font-heading);
+    font-size: 24pt;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    border-bottom: 1.5px solid #B5710A !important;
+    padding-bottom: 8px;
+    margin: 0 0 22px;
+  }
+  .print-toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+  .print-toc-list li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 11px 2px;
+    border-bottom: 1px solid #e4ded2;
+    color: #1f1c16 !important;
+  }
+  .print-toc-list li::before {
+    content: counter(toc) ".";
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12pt;
+    color: #B5710A;
+    min-width: 26px;
+  }
+  .print-toc-label {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13pt;
+    color: #14110b;
+  }
+  .print-toc-desc {
+    flex: 1;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9.5pt;
+    font-style: italic;
+    color: #6a6a6a;
+    text-align: right;
+  }
+
+  /* ---- Cover + scope page (markup is print-only) ---- */
+  .print-cover {
+    flex-direction: column;
+    justify-content: center;
+    min-height: 86vh;
+    color: #14110b !important;
+  }
+  .print-cover-eyebrow {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #B5710A;
+    margin-bottom: 14px;
+  }
+  .print-cover-title {
+    font-family: var(--font-heading);
+    font-size: 38pt;
+    line-height: 1.04;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    margin: 0 0 6px;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .print-cover-sub {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13pt;
+    font-style: italic;
+    color: #5a5650;
+    margin: 0 0 30px;
+  }
+  .print-scope {
+    margin: 0;
+    max-width: 470px;
+    border-top: 1.5px solid #B5710A;
+  }
+  .print-scope > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 18px;
+    padding: 9px 2px;
+    border-bottom: 1px solid #e4ded2;
+  }
+  .print-scope dt {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 10.5pt;
+    color: #6a6a6a;
+    margin: 0;
+  }
+  .print-scope dd {
+    font-family: var(--font-heading);
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #14110b;
+    margin: 0;
+    text-align: right;
+  }
+  .print-cover-foot {
+    margin-top: 38px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9pt;
+    color: #8a8a8a;
+  }
 }
 
 </style>
 </head>
 <body>
+<section class="print-cover" aria-hidden="true">
+  <div class="print-cover-eyebrow">Codebase Almanac</div>
+  <h1 class="print-cover-title">Spendwise</h1>
+  <p class="print-cover-sub">Architecture, Product &amp; Security Review</p>
+  <dl class="print-scope">
+    <div><dt>Generated</dt><dd>June 17, 2026</dd></div>
+    <div><dt>Files analyzed</dt><dd>16</dd></div>
+    <div><dt>Lines of code</dt><dd>4,769</dd></div>
+    <div><dt>Symbols catalogued</dt><dd>11</dd></div>
+    <div><dt>Primary languages</dt><dd>HTML, TypeScript, JSON</dd></div>
+    <div><dt>Report sections</dt><dd>8 tabs</dd></div>
+  </dl>
+  <div class="print-cover-foot">designed by the PineApple Team &middot; 2026</div>
+</section>
+<section class="print-toc" aria-hidden="true"><h2 class="print-toc-title">Contents</h2><ol class="print-toc-list"><li><span class="print-toc-label">Overview</span><span class="print-toc-desc">Project snapshot &amp; metrics</span></li><li><span class="print-toc-label">Product</span><span class="print-toc-desc">Features, workflows &amp; API surface</span></li><li><span class="print-toc-label">Technical</span><span class="print-toc-desc">Architecture, modules &amp; code health</span></li><li><span class="print-toc-label">Database</span><span class="print-toc-desc">Schema, queries &amp; data flow</span></li><li><span class="print-toc-label">Security</span><span class="print-toc-desc">Risks, findings &amp; hardening</span></li><li><span class="print-toc-label">Strategic Suggestions</span><span class="print-toc-desc">Prioritized recommendations</span></li><li><span class="print-toc-label">Idea Validation</span><span class="print-toc-desc">Idea validation &amp; positioning</span></li><li><span class="print-toc-label">Future Outlook</span><span class="print-toc-desc">Growth scenarios &amp; outlook</span></li></ol></section>
 <div class="tropical-top-banner" aria-hidden="true">
   <div class="tropical-top-banner-wave" aria-hidden="true"></div>
   <span class="tropical-top-banner-emoji">
@@ -3407,7 +3771,7 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 <button class="tab-btn" role="tab" data-tab="technical" onclick="switchTab('technical')">Technical</button>
 <button class="tab-btn" role="tab" data-tab="database" onclick="switchTab('database')">Database</button>
 <button class="tab-btn" role="tab" data-tab="security" onclick="switchTab('security')">Security</button>
-<button class="tab-btn" role="tab" data-tab="suggestions" onclick="switchTab('suggestions')">Strategic Recommendations</button>
+<button class="tab-btn" role="tab" data-tab="suggestions" onclick="switchTab('suggestions')">Strategic Suggestions</button>
 <button class="tab-btn" role="tab" data-tab="pitch" onclick="switchTab('pitch')">Idea Validation</button>
 <button class="tab-btn" role="tab" data-tab="simulation" onclick="switchTab('simulation')">Future Outlook</button>
 
@@ -3555,15 +3919,15 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 
       <div class="metrics-row">
         <div class="metric-card" data-searchable><div class="card-title">Files</div><div class="card-value">16</div><div class="card-label">scanned files</div></div>
-        <div class="metric-card" data-searchable><div class="card-title">Lines</div><div class="card-value">4631</div><div class="card-label">total LOC</div></div>
+        <div class="metric-card" data-searchable><div class="card-title">Lines</div><div class="card-value">4769</div><div class="card-label">total LOC</div></div>
         <div class="metric-card" data-searchable><div class="card-title">Dependencies</div><div class="card-value">0</div><div class="card-label">external packages</div></div>
         <div class="metric-card" data-searchable><div class="card-title">Symbols</div><div class="card-value">11</div><div class="card-label">catalogued symbols</div></div>
       </div>
 
       <h2>Language Breakdown</h2>
       <div class="lang-bar-container">
-        <div class="lang-bar"><div class="lang-bar-segment" style="width:91.21%;background:#64748b" title="HTML: 4224 lines"></div><div class="lang-bar-segment" style="width:6.39%;background:#FFD700" title="TypeScript: 296 lines"></div><div class="lang-bar-segment" style="width:1.14%;background:#FF8A3D" title="JSON: 53 lines"></div><div class="lang-bar-segment" style="width:0.95%;background:#8B5A2B" title="Markdown: 44 lines"></div><div class="lang-bar-segment" style="width:0.30%;background:#F4A300" title="JavaScript: 14 lines"></div></div>
-        <div class="lang-legend"><div class="lang-legend-item"><span class="lang-dot" style="background:#64748b"></span><span>HTML (4224)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#FFD700"></span><span>TypeScript (296)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#FF8A3D"></span><span>JSON (53)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#8B5A2B"></span><span>Markdown (44)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#F4A300"></span><span>JavaScript (14)</span></div></div>
+        <div class="lang-bar"><div class="lang-bar-segment" style="width:91.47%;background:#64748b" title="HTML: 4362 lines"></div><div class="lang-bar-segment" style="width:6.21%;background:#FFD700" title="TypeScript: 296 lines"></div><div class="lang-bar-segment" style="width:1.11%;background:#FF8A3D" title="JSON: 53 lines"></div><div class="lang-bar-segment" style="width:0.92%;background:#8B5A2B" title="Markdown: 44 lines"></div><div class="lang-bar-segment" style="width:0.29%;background:#F4A300" title="JavaScript: 14 lines"></div></div>
+        <div class="lang-legend"><div class="lang-legend-item"><span class="lang-dot" style="background:#64748b"></span><span>HTML (4362)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#FFD700"></span><span>TypeScript (296)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#FF8A3D"></span><span>JSON (53)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#8B5A2B"></span><span>Markdown (44)</span></div><div class="lang-legend-item"><span class="lang-dot" style="background:#F4A300"></span><span>JavaScript (14)</span></div></div>
       </div>
 
       <h2>Explore by Tab</h2>
@@ -3573,7 +3937,7 @@ body:not(.easy-mode) .easy-only { display: none !important; }
 <article class="card summary-link-card" onclick="goToTab('technical')" data-searchable tabindex="0" role="link" aria-label="Open Technical tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">⚙️</div><div class="card-title">Technical</div></div><div class="card-desc">A <strong class="kw">monorepo</strong> with <strong class="kw">2 npm workspace packages</strong> wired through a clean <strong class="kw">middleware pipeline</strong> — request logging, rate limiting, helmet security headers, and centralized error handling all layered before any route executes.</div><span class="card-link">View details →</span></article>
 <article class="card summary-link-card" onclick="goToTab('database')" data-searchable tabindex="0" role="link" aria-label="Open Database tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">🗄️</div><div class="card-title">Database</div></div><div class="card-desc"><strong class="kw">SQLite</strong> with <strong class="kw">WAL journaling</strong> stores user records in a single <strong class="kw">users</strong> table, enforced by <strong class="kw">foreign keys</strong> and a dedicated <strong class="kw">email index</strong> for fast lookups.</div><span class="card-link">View details →</span></article>
 <article class="card summary-link-card" onclick="goToTab('security')" data-searchable tabindex="0" role="link" aria-label="Open Security tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">🛡️</div><div class="card-title">Security</div></div><div class="card-desc"><strong class="kw">2 high</strong> and <strong class="kw">2 medium</strong> severity findings — a <strong class="kw">hardcoded JWT fallback secret</strong>, <strong class="kw">wildcard CORS</strong>, and an <strong class="kw">in-memory rate limiter</strong> that is not cluster-safe need attention before production.</div><span class="card-link">View details →</span></article>
-<article class="card summary-link-card" onclick="goToTab('suggestions')" data-searchable tabindex="0" role="link" aria-label="Open Strategic Recommendations tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">💡</div><div class="card-title">Strategic Recommendations</div></div><div class="card-desc"><strong class="kw">6 targeted improvements</strong> span from adding <strong class="kw">refresh-token rotation</strong> and <strong class="kw">environment validation</strong> to extracting a <strong class="kw">repository layer</strong> and introducing <strong class="kw">automated tests</strong> — each sized with a pineapple effort score.</div><span class="card-link">View details →</span></article>
+<article class="card summary-link-card" onclick="goToTab('suggestions')" data-searchable tabindex="0" role="link" aria-label="Open Strategic Suggestions tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">💡</div><div class="card-title">Strategic Suggestions</div></div><div class="card-desc"><strong class="kw">6 targeted improvements</strong> span from adding <strong class="kw">refresh-token rotation</strong> and <strong class="kw">environment validation</strong> to extracting a <strong class="kw">repository layer</strong> and introducing <strong class="kw">automated tests</strong> — each sized with a pineapple effort score.</div><span class="card-link">View details →</span></article>
 <article class="card summary-link-card" onclick="goToTab('pitch')" data-searchable tabindex="0" role="link" aria-label="Open Idea Validation tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">🎤</div><div class="card-title">Idea Validation</div></div><div class="card-desc">A <strong class="kw">focused, well-structured</strong> expense tracker that demonstrates <strong class="kw">production-grade patterns</strong> — JWT authentication, input validation, security headers — in a deliberately <strong class="kw">compact footprint</strong> perfect for learning and extending.</div><span class="card-link">View details →</span></article>
 <article class="card summary-link-card" onclick="goToTab('simulation')" data-searchable tabindex="0" role="link" aria-label="Open Future Outlook tab"><div class="summary-link-head"><div class="card-icon" aria-hidden="true">🔮</div><div class="card-title">Future Outlook</div></div><div class="card-desc">Scaling to <strong class="kw">10,000 users</strong> requires swapping the <strong class="kw">in-memory rate limiter</strong> for a shared store, migrating to <strong class="kw">PostgreSQL</strong>, and adding <strong class="kw">horizontal load balancing</strong> — a phased journey from prototype to production-grade service.</div><span class="card-link">View details →</span></article>
 
@@ -4223,8 +4587,16 @@ body:not(.easy-mode) .easy-only { display: none !important; }
   }
 
   // === DOWNLOAD AS PDF ===
+  // Native, dependency-free export. Mermaid renders diagrams lazily for the
+  // active tab only, so before printing we momentarily reveal every tab
+  // panel (via the `preparing-print` body class), render all diagrams in the
+  // CURRENTLY-ACTIVE audience mode, await them, then hand off to the
+  // browser's print -> "Save as PDF". The @media print stylesheet lays out
+  // every tab as its own set of pages. The Developer/General toggle is left
+  // untouched, so only the active mode is exported.
   async function renderAllMermaidForPrint() {
     document.body.classList.add('preparing-print');
+    // Force layout so offsetParent reflects the now-revealed panels.
     void document.body.offsetHeight;
     const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))
       .filter((el) => el.offsetParent !== null);
@@ -4235,6 +4607,7 @@ body:not(.easy-mode) .easy-only { display: none !important; }
       });
       try { await mermaid.run({ nodes }); } catch (e) { /* keep going so the PDF still exports */ }
     }
+    // Let the freshly-rendered SVGs settle before the print snapshot.
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
@@ -4251,6 +4624,10 @@ body:not(.easy-mode) .easy-only { display: none !important; }
     }
   }
 
+  // Best-effort for users who press Ctrl/Cmd+P directly instead of the
+  // button: render any still-unrendered visible diagrams. Synchronous print
+  // may fire before this async render completes, so the Download PDF button
+  // remains the reliable path for a fully-rendered export.
   window.addEventListener('beforeprint', () => {
     if (document.body.classList.contains('preparing-print')) return;
     const nodes = Array.from(document.querySelectorAll('.tab-panel .mermaid'))

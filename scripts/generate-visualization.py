@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 
@@ -2677,15 +2678,309 @@ body:not(.easy-mode) .easy-only { display: none !important; }
     border-width: 1.5px;
   }
 }
+/* === PRINT RE-SKIN (Report mode) =====================================
+   Emitted AFTER visualization-base.css, so these rules win the cascade and
+   override the Pineapple theme's colours, gradients and decoration when the
+   almanac is exported to PDF. The result is a clean, monochrome analyst-style
+   report with a single warm accent (#B5710A) reserved for section rules,
+   figure labels and the cover. The structural print rules (page geometry,
+   footer page counters, panel reveal, page breaks) live in the base file. */
 @media print {
-  .credits {
-    position: static;
-    box-shadow: none;
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
+  /* Flatten every themed background / texture to plain white. */
+  html, body {
+    background: #ffffff !important;
+    background-image: none !important;
   }
-  .credits .credits-link { display: none; }
+  body::before, html::after,
+  .tab-panel::before, .tab-panel::after,
+  .hero::before, .hero::after {
+    display: none !important;
+    background: none !important;
+    content: none !important;
+  }
+
+  /* Sections + hero become plain blocks, not glossy gold cards. */
+  .tab-panel, .hero, .codebase-card {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 4px !important;
+  }
+  .hero-art { display: none !important; }
+
+  /* Strip decorative emoji / glyphs from headings, dividers, icons. */
+  h2:not(.codebase-card-name):not(.no-h2-deco)::before,
+  h2::after,
+  .card-icon,
+  .summary-link-head .card-icon,
+  .tree-icon,
+  .section-divider,
+  .pineapple-divider {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Headings: serif display face, solid ink, never a gradient text-fill. */
+  h1, h2, h3, h4,
+  .codebase-card-name,
+  .panel-header h2,
+  .pitch-oneliner-text {
+    font-family: var(--font-heading) !important;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  /* Thin accent rule under each section heading (report convention). */
+  .tab-panel h2:not(.codebase-card-name) {
+    border-bottom: 1.5px solid #B5710A !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Body copy in dark grey; highlight chips become plain bold text. */
+  p, li, td, th,
+  .health-row-desc, .finding-detail, .prose-bullets li {
+    color: #1f1c16 !important;
+  }
+  .kw {
+    background: none !important;
+    color: inherit !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .num { color: inherit !important; font-weight: 700 !important; background: none !important; }
+
+  /* Cards / findings / callouts: flat hairline-bordered blocks. */
+  .card, .metric-card, .finding, .risk-card, .roadmap-node,
+  .summary-link, .copyable-block, .pitch-oneliner, .pitch-story,
+  .sim-takeoff-card, .team-intro-banner {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #d8d2c4 !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+  }
+  .card::before, .card::after,
+  .metric-card::before, .metric-card::after,
+  .finding::before, .finding::after,
+  .diagram-container::before,
+  .sim-takeoff-card::before {
+    display: none !important;
+    content: none !important;
+  }
+  .card-value {
+    -webkit-text-fill-color: #B5710A !important;
+    color: #B5710A !important;
+    background: none !important;
+  }
+
+  /* Tables: simple ruled grid with an accented header row. */
+  table, .data-table { border-collapse: collapse !important; }
+  th, td, .data-table th, .data-table td {
+    border: 1px solid #d8d2c4 !important;
+    background: #ffffff !important;
+  }
+  th, .data-table th {
+    background: #f4efe6 !important;
+    color: #14110b !important;
+    border-bottom: 1.5px solid #B5710A !important;
+  }
+
+  /* Severity / framework badges -> readable outlined ink. */
+  .badge, .badge-high, .badge-medium, .badge-low, .badge-framework {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #14110b !important;
+    border: 1px solid #555555 !important;
+    box-shadow: none !important;
+  }
+
+  /* Seasoning / mode / health chips: keep the text, drop the gold pill. */
+  .seasoning-chip, .mode-toggle, .traffic-light {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #999999 !important;
+    color: #14110b !important;
+    box-shadow: none !important;
+  }
+
+  /* Numbered figures beneath every diagram. */
+  body { counter-reset: figure; }
+  .diagram-container {
+    counter-increment: figure;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+  }
+  .diagram-container::after {
+    display: block !important;
+    content: "Figure " counter(figure) "." !important;
+    margin-top: 8px !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 9pt !important;
+    font-style: italic !important;
+    color: #5a5650 !important;
+    text-align: center !important;
+  }
+
+  /* ---- Right-edge crop guards ----
+     Diagrams render at natural size and tables/code can be very wide; scale
+     or wrap them so nothing spills past the printable column. */
+  .mermaid, .diagram-container { overflow: hidden !important; }
+  .mermaid svg {
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+  }
+  pre, code,
+  .card-loc code, td code, .data-table code, .symbol-kind {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  table, .data-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+  }
+  th, td, .data-table th, .data-table td {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  /* Let horizontal-scroll containers wrap instead of clipping on paper. */
+  .scalability-roadmap, .roadmap, [style*="overflow-x"] {
+    overflow: visible !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* ---- Contents page ---- */
+  .print-toc {
+    color: #14110b !important;
+    padding-top: 6mm;
+  }
+  .print-toc-title {
+    font-family: var(--font-heading);
+    font-size: 24pt;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    border-bottom: 1.5px solid #B5710A !important;
+    padding-bottom: 8px;
+    margin: 0 0 22px;
+  }
+  .print-toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+  .print-toc-list li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 11px 2px;
+    border-bottom: 1px solid #e4ded2;
+    color: #1f1c16 !important;
+  }
+  .print-toc-list li::before {
+    content: counter(toc) ".";
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12pt;
+    color: #B5710A;
+    min-width: 26px;
+  }
+  .print-toc-label {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13pt;
+    color: #14110b;
+  }
+  .print-toc-desc {
+    flex: 1;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9.5pt;
+    font-style: italic;
+    color: #6a6a6a;
+    text-align: right;
+  }
+
+  /* ---- Cover + scope page (markup is print-only) ---- */
+  .print-cover {
+    flex-direction: column;
+    justify-content: center;
+    min-height: 86vh;
+    color: #14110b !important;
+  }
+  .print-cover-eyebrow {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #B5710A;
+    margin-bottom: 14px;
+  }
+  .print-cover-title {
+    font-family: var(--font-heading);
+    font-size: 38pt;
+    line-height: 1.04;
+    color: #14110b !important;
+    -webkit-text-fill-color: #14110b !important;
+    margin: 0 0 6px;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .print-cover-sub {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13pt;
+    font-style: italic;
+    color: #5a5650;
+    margin: 0 0 30px;
+  }
+  .print-scope {
+    margin: 0;
+    max-width: 470px;
+    border-top: 1.5px solid #B5710A;
+  }
+  .print-scope > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 18px;
+    padding: 9px 2px;
+    border-bottom: 1px solid #e4ded2;
+  }
+  .print-scope dt {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 10.5pt;
+    color: #6a6a6a;
+    margin: 0;
+  }
+  .print-scope dd {
+    font-family: var(--font-heading);
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #14110b;
+    margin: 0;
+    text-align: right;
+  }
+  .print-cover-foot {
+    margin-top: 38px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9pt;
+    color: #8a8a8a;
+  }
 }
 """
 
@@ -7468,6 +7763,63 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
         f'</div>'
     )
 
+    # --- Print-only cover + scope page ----------------------------------
+    # Hidden on screen (`.print-cover { display:none }`), revealed only when
+    # the almanac is exported to PDF. Gives the report a BCCG-style title
+    # page + scope/definitions block before the first section.
+    _lang_pairs = sorted(
+        (
+            (str(lang), int((det or {}).get("lines", 0)))
+            for lang, det in (metrics.get("languages") or {}).items()
+        ),
+        key=lambda kv: kv[1],
+        reverse=True,
+    )
+    cover_langs = ", ".join(name for name, ln in _lang_pairs[:3] if ln > 0) or "Mixed"
+    cover_sections = 8 if has_database else 7
+    cover_date = datetime.now().strftime("%B %-d, %Y") if os.name != "nt" \
+        else datetime.now().strftime("%B %d, %Y")
+    print_cover_html = f"""<section class="print-cover" aria-hidden="true">
+  <div class="print-cover-eyebrow">Codebase Almanac</div>
+  <h1 class="print-cover-title">{esc(project)}</h1>
+  <p class="print-cover-sub">Architecture, Product &amp; Security Review</p>
+  <dl class="print-scope">
+    <div><dt>Generated</dt><dd>{esc(cover_date)}</dd></div>
+    <div><dt>Files analyzed</dt><dd>{files_count:,}</dd></div>
+    <div><dt>Lines of code</dt><dd>{lines_count:,}</dd></div>
+    <div><dt>Symbols catalogued</dt><dd>{symbols_count:,}</dd></div>
+    <div><dt>Primary languages</dt><dd>{esc(cover_langs)}</dd></div>
+    <div><dt>Report sections</dt><dd>{cover_sections} tabs</dd></div>
+  </dl>
+  <div class="print-cover-foot">designed by the PineApple Team &middot; 2026</div>
+</section>"""
+
+    # --- Print-only Table of Contents page ------------------------------
+    # Built from the same ordered tab list as the nav (respects the
+    # conditional Database tab), so the printed contents always match the
+    # sections that follow. Hidden on screen, revealed only in print.
+    _toc_desc = {
+        "overview": "Project snapshot &amp; metrics",
+        "product": "Features, workflows &amp; API surface",
+        "technical": "Architecture, modules &amp; code health",
+        "database": "Schema, queries &amp; data flow",
+        "security": "Risks, findings &amp; hardening",
+        "suggestions": "Prioritized recommendations",
+        "pitch": "Idea validation &amp; positioning",
+        "simulation": "Growth scenarios &amp; outlook",
+    }
+    _toc_items = "".join(
+        f'<li><span class="print-toc-label">{esc(tab_labels[tid])}</span>'
+        f'<span class="print-toc-desc">{_toc_desc.get(tid, "")}</span></li>'
+        for tid in tab_ids
+    )
+    print_toc_html = (
+        '<section class="print-toc" aria-hidden="true">'
+        '<h2 class="print-toc-title">Contents</h2>'
+        f'<ol class="print-toc-list">{_toc_items}</ol>'
+        '</section>'
+    )
+
     # --- Build the full HTML document -----------------------------------
     html_doc = f"""<!DOCTYPE html>
 <html lang="en">
@@ -7487,6 +7839,8 @@ def generate(analysis_path: Path, output_path: Path, title: str | None = None, p
 </style>
 </head>
 <body>
+{print_cover_html}
+{print_toc_html}
 <div class="tropical-top-banner" aria-hidden="true">
   <div class="tropical-top-banner-wave" aria-hidden="true"></div>
   <span class="tropical-top-banner-emoji">

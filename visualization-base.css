@@ -589,17 +589,40 @@ code, .code {
   }
 }
 
-/* === PRINT === */
+/* === PRINT (Report mode) ===
+   Both the "Download PDF" button and a direct Ctrl/Cmd+P route through this
+   stylesheet. Instead of printing the on-screen tropical theme, the export
+   is re-skinned into a clean, paginated analyst-style report: white pages,
+   serif headings, numbered figures and a page-number footer.
+
+   This base block owns the structural rules that the theme does NOT touch
+   (page geometry + footer counters, panel reveal, page breaks, full-width
+   flattening). The colour / decoration re-skin that has to OVERRIDE the
+   Pineapple theme lives in the theme's own @media print block (emitted by
+   generate-visualization.py AFTER this file, so it wins the cascade). */
+
+.print-cover,
+.print-toc { display: none; }
 
 @page {
   size: A4 portrait;
-  margin: 12mm;
+  margin: 18mm 16mm 20mm;
+  @top-right {
+    content: "Codebase Almanac";
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 8.5pt;
+    letter-spacing: 0.05em;
+    color: #8a8a8a;
+  }
+  @bottom-center {
+    content: "\2014  " counter(page) " of " counter(pages) "  \2014";
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 9pt;
+    color: #6a6a6a;
+  }
 }
 
 @media print {
-  /* Print the theme colours/backgrounds instead of stripping them to white.
-     Without this, Chrome/Safari skip background fills AND gradient-clipped
-     text (e.g. .card-value metric numbers) renders invisible. */
   *,
   *::before,
   *::after {
@@ -607,32 +630,31 @@ code, .code {
     print-color-adjust: exact !important;
   }
 
-  /* Chrome paints the root (html) background on EVERY page, so the themed
-     page tint carries through all 21+ pages. The body background uses
-     background-attachment: fixed on screen, which only prints on page 1 —
-     so we make body transparent and let html own the page background. */
-  html {
-    background:
-      radial-gradient(ellipse 90% 40% at 50% 0%, #FFF6C8 0%, transparent 60%),
-      linear-gradient(180deg, #FFF9E6 0%, #FFEFC4 100%) !important;
-    background-attachment: scroll !important;
+  /* Plain white pages with near-black body text. The on-screen layout makes
+     <body> a flexbox (its only flow child is .app-layout); in print we add
+     block-level cover/contents pages as siblings, so reset to block flow or
+     they line up in a row and overflow the right page edge. */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
   }
   body {
-    background: transparent !important;
+    display: block !important;
   }
-  /* The fixed full-viewport texture overlays only paint on page 1; drop them
-     so every page looks consistent. */
+  /* Drop the fixed full-viewport texture overlays. */
   body::before,
   html::after {
     display: none !important;
   }
 
-  /* Hide interactive chrome that has no meaning in a static PDF. */
+  /* Hide interactive / decorative chrome that has no meaning in a PDF. */
   .sidebar,
   .sidebar-toggle,
   .top-bar,
   .tropical-top-banner,
-  .download-pdf-btn {
+  .download-pdf-btn,
+  .credits {
     display: none !important;
   }
 
@@ -648,6 +670,16 @@ code, .code {
     width: 100% !important;
     max-width: 100% !important;
   }
+
+  /* Print-only title page, then a contents page, then one page per section. */
+  .print-cover {
+    display: flex !important;
+    page-break-after: always;
+  }
+  .print-toc {
+    display: block !important;
+    page-break-after: always;
+  }
   .tab-panel {
     display: block !important;
     page-break-before: always;
@@ -655,24 +687,25 @@ code, .code {
     max-width: 100% !important;
     box-sizing: border-box;
   }
-  .tab-panel:first-of-type {
-    page-break-before: auto;
+
+  /* Nothing may exceed the printable column width, or it gets cropped at
+     the right page margin. Constrain the shell + every wide element. */
+  .app-layout,
+  .main-content,
+  .tab-panel,
+  .tab-panel * {
+    box-sizing: border-box !important;
+  }
+  .tab-panel img,
+  .tab-panel svg,
+  .tab-panel pre,
+  .tab-panel table,
+  .tab-panel .mermaid,
+  .tab-panel .diagram-container {
+    max-width: 100% !important;
   }
 
-  /* Gradient-clipped text falls back to a solid colour so it is never
-     invisible even if a browser ignores print-color-adjust. */
-  .card-value {
-    -webkit-text-fill-color: #C97A00 !important;
-    color: #C97A00 !important;
-    background: none !important;
-  }
-
-  .badge-high { background: #cc0000 !important; }
-  .badge-medium { background: #cc8800 !important; }
-  .badge-low { background: #0066cc !important; }
-
-  /* Keep self-contained blocks from being split across page boundaries
-     when the whole almanac is exported as a PDF. */
+  /* Keep self-contained blocks from being split across page boundaries. */
   .card,
   .metric-card,
   .diagram-container,
@@ -681,11 +714,8 @@ code, .code {
   .risk-card,
   .summary-link,
   .seasoning-chip,
+  figure,
   table {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-  .hero {
     break-inside: avoid;
     page-break-inside: avoid;
   }
