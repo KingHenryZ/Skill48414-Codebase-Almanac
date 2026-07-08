@@ -6,7 +6,6 @@ This skill streamlines the "vibe-coding" experience by providing a clear visual 
 
 <img width="1499" height="742" alt="Screenshot 2026-07-08 at 10 06 52" src="https://github.com/user-attachments/assets/fa2a0856-5e66-4793-8c2a-f1d789139807" />
 <img width="1493" height="716" alt="Screenshot 2026-07-08 at 10 07 08" src="https://github.com/user-attachments/assets/5495220c-e81f-470d-8a32-66669bc40385" />
-
 ---
 
 ## Get It From GitHub
